@@ -1,4 +1,3 @@
-html
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -9,8 +8,18 @@ html
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
-  <!-- Supabase 공식 클라이언트 라이브러리 CDN (설치 불필요) -->
+  <!-- Supabase 공식 클라이언트 라이브러리 CDN -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <!-- ========================================================================= -->
+  <!-- ⭐ [초간편 설정] 바로 아래 17번, 18번째 줄의 작은따옴표('') 사이에 키를 넣으세요! ⭐ -->
+  <!-- ========================================================================= -->
+  <script>
+    window.DEFAULT_SUPABASE_URL = 'https://zcirreplmjqplnbqpwwz.supabase.co/rest/v1/'; // 👈 [17행] Project URL (예: 'https://xxxxxx.supabase.co')
+    window.DEFAULT_SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpjaXJyZXBsbWpxcGxuYnFwd3d6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI3MzUzNTgsImV4cCI6MjEwODMxMTM1OH0.fhP0eb5b728k9ERO1rCl-V2pLeveN47yN75oc-YeqIU'; // 👈 [18행] anon public 키 (예: 'eyJhbGciOiJIUzI1NiIsInR5cCI6...')
+  </script>
+  <!-- ========================================================================= -->
+
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700&display=swap');
     body { font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif; }
@@ -47,9 +56,6 @@ html
           <span id="headerSyncDot" class="w-2 h-2 rounded-full bg-amber-400"></span>
           <span id="headerSyncText">클라우드 연동</span>
         </button>
-        <button id="quickFillBtn" class="text-xs bg-slate-200 hover:bg-slate-300 text-slate-700 px-2 py-1.5 rounded-lg font-medium transition" title="샘플 데이터">
-          샘플
-        </button>
         <button id="exportBtn" title="데이터 백업" class="p-1.5 bg-white border border-slate-200 text-slate-600 hover:bg-slate-100 rounded-lg shadow-sm">
           <i data-lucide="download" class="w-4 h-4"></i>
         </button>
@@ -66,7 +72,7 @@ html
         <i data-lucide="cloud-off" id="bannerSyncIcon" class="w-4 h-4 text-amber-600 shrink-0"></i>
         <div>
           <span id="bannerSyncTitle" class="font-bold">현재 개별 폰 저장 모드 (동기화 미연동)</span>
-          <span id="bannerSyncDesc" class="text-[11px] block text-amber-700 mt-0.5">아내분과 실시간으로 공유하려면 Supabase 키를 1회 입력해 주세요.</span>
+          <span id="bannerSyncDesc" class="text-[11px] block text-amber-700 mt-0.5">아내분과 실시간으로 공유하려면 Supabase 키를 설정해 주세요.</span>
         </div>
       </div>
       <button id="bannerActionBtn" class="bg-amber-600 hover:bg-amber-700 text-white font-semibold px-2.5 py-1 rounded-lg text-[11px] shrink-0 ml-2 transition">
@@ -211,7 +217,7 @@ html
       <div class="flex gap-2">
         <div class="relative flex-1">
           <i data-lucide="search" class="w-3.5 h-3.5 absolute left-2.5 top-2.5 text-slate-400"></i>
-          <input type="text" id="searchInput" placeholder="항목명, 계좌명(예: 우리꿈), 카드, 메모 검색" class="w-full pl-8 pr-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none" />
+          <input type="text" id="searchInput" placeholder="항목명, 계좌명, 카드, 메모 검색" class="w-full pl-8 pr-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none" />
         </div>
         <select id="sortSelect" class="bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs text-slate-700 focus:outline-none">
           <option value="day">결제일순 (1일~31일)</option>
@@ -267,13 +273,12 @@ html
         </div>
 
         <div class="bg-indigo-50 p-2.5 rounded-lg border border-indigo-100 text-[11px] text-indigo-900 space-y-1">
-          <p>💡 <b>한 번만 입력하면 기억합니다:</b></p>
-          <p>이 스마트폰에 한 번 저장해 두면 이후부터는 접속할 때마다 자동으로 아내분 폰과 실시간 동기화됩니다.</p>
+          <p>💡 <b>코드 17~18행에 입력해 두시면</b> 모달 설정 없이도 모든 기기에서 즉시 자동 연동됩니다.</p>
         </div>
 
         <div class="flex gap-2 pt-1">
           <button type="button" id="btnDisconnectSync" class="py-2.5 px-3 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-xl font-medium transition">연동 해제</button>
-          <button type="submit" class="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-semibold shadow-sm transition">연동 및 데이터 불러오기</button>
+          <button type="submit" class="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-semibold shadow-sm transition">연동 및 저장</button>
         </div>
       </form>
     </div>
@@ -310,7 +315,7 @@ html
         <!-- 2. 항목명 -->
         <div>
           <label class="block font-semibold text-slate-700 mb-1">항목명 *</label>
-          <input type="text" id="itemName" required placeholder="예: 아파트 관리비, 주담대1, 청약통장" class="w-full px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none" />
+          <input type="text" id="itemName" required placeholder="예: 아파트 관리비, 주담대, 청약통장" class="w-full px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none" />
         </div>
 
         <!-- 금액 & 결제일 -->
@@ -481,14 +486,10 @@ html
     </div>
   </div>
 
+  <!-- ======================================================== -->
+  <!-- 자바스크립트 내부 메인 로직                                 -->
+  <!-- ======================================================== -->
   <script>
-    // ==========================================
-    // 1. Supabase 접속 기본 설정
-    // (소스코드에 직접 입력해두면 부부 둘 다 모달 입력 없이 즉시 연동됩니다)
-    // ==========================================
-    const DEFAULT_SUPABASE_URL = ''; // 예: 'https://xxxx.supabase.co'
-    const DEFAULT_SUPABASE_KEY = ''; // 예: 'eyJhbGciOiJIUzI1Ni...'
-
     const CONFIG_STORAGE_KEY = 'budget_supabase_config';
     const STORAGE_KEY = 'fixed_expenses_v3';
     const HISTORY_STORAGE_PREFIX = 'budget_frequent_';
@@ -546,12 +547,15 @@ html
       };
     }
 
-    // --- Supabase 초기화 및 실시간 구독 엔진 ---
+    // --- Supabase 초기화 및 실시간 동기화 엔진 ---
     function getStoredSupabaseConfig() {
       try {
         const saved = JSON.parse(localStorage.getItem(CONFIG_STORAGE_KEY) || '{}');
-        const url = (DEFAULT_SUPABASE_URL && DEFAULT_SUPABASE_URL.trim() !== '') ? DEFAULT_SUPABASE_URL.trim() : (saved.url || '');
-        const key = (DEFAULT_SUPABASE_KEY && DEFAULT_SUPABASE_KEY.trim() !== '') ? DEFAULT_SUPABASE_KEY.trim() : (saved.key || '');
+        const defaultUrl = (window.DEFAULT_SUPABASE_URL || '').trim();
+        const defaultKey = (window.DEFAULT_SUPABASE_KEY || '').trim();
+
+        const url = (defaultUrl !== '') ? defaultUrl : (saved.url || '');
+        const key = (defaultKey !== '') ? defaultKey : (saved.key || '');
         return { url, key };
       } catch (e) {
         return { url: '', key: '' };
@@ -626,7 +630,7 @@ html
 
         updateSyncUI('connected');
 
-        // 2. 실시간 동기화 구독 (상대방이 추가/수정/삭제 시 새로고침 없이 1초 만에 화면 갱신)
+        // 2. 실시간 동기화 구독
         if (realtimeChannel) {
           supabaseClient.removeChannel(realtimeChannel);
         }
@@ -660,7 +664,6 @@ html
 
     // 로컬 및 클라우드 동시 저장 함수
     async function syncSaveItem(item) {
-      // 1. 로컬 즉시 반영
       const idx = expenses.findIndex(i => i.id === item.id);
       if (idx !== -1) {
         expenses[idx] = item;
@@ -670,7 +673,6 @@ html
       localStorage.setItem(STORAGE_KEY, JSON.stringify(expenses));
       render();
 
-      // 2. Supabase 클라우드 전송
       if (supabaseClient) {
         const payload = mapToDB(item);
         const { error } = await supabaseClient.from('fixed_expenses').upsert(payload);
@@ -682,12 +684,10 @@ html
     }
 
     async function syncDeleteItem(id) {
-      // 1. 로컬 즉시 삭제
       expenses = expenses.filter(i => i.id !== id);
       localStorage.setItem(STORAGE_KEY, JSON.stringify(expenses));
       render();
 
-      // 2. Supabase 클라우드 삭제
       if (supabaseClient) {
         const { error } = await supabaseClient.from('fixed_expenses').delete().eq('id', id);
         if (error) {
@@ -765,7 +765,6 @@ html
       return `<span class="text-[10px] bg-indigo-50 text-indigo-700 px-1.5 py-0.5 rounded border border-indigo-200 font-medium">${durationMonths}개월 약정</span>`;
     }
 
-    // --- 자주 입력하는 내역 학습 ---
     function getFrequentItems(field) {
       const counts = {};
       expenses.forEach(item => {
@@ -822,7 +821,7 @@ html
       }
     }
 
-    // --- 대시보드 및 리스트 렌더링 ---
+    // --- 대시보드 렌더링 ---
     function renderPortfolioSection(expMonthly, savMonthly, totalMonthly) {
       const expRate = totalMonthly > 0 ? Math.round((expMonthly / totalMonthly) * 100) : 0;
       const savRate = totalMonthly > 0 ? (100 - expRate) : 0;
@@ -841,7 +840,7 @@ html
       if (currentPortfolioTab === 'account') {
         const groups = {};
         expenses.forEach(item => {
-          const methodLabels = { account: '🏦 계좌', credit: '💳 신용카드', check: '💳 체크카드', direct: '💸 직접송금' };
+          const methodLabels = { account: '🏦 계좌', credit: '💳 신용', check: '💳 체크', direct: '💸 송금' };
           const methodPrefix = methodLabels[item.paymentMethod] || '기타';
           const accountName = item.paymentDetail ? item.paymentDetail : '상세 미지정';
           const key = `${accountName}__${item.paymentMethod}`;
@@ -1578,7 +1577,7 @@ html
       }
     });
 
-    // --- 이벤트 핸들러 바인딩 ---
+    // --- 이벤트 바인딩 ---
     document.querySelectorAll('.portfolio-tab').forEach(btn => {
       btn.addEventListener('click', () => {
         document.querySelectorAll('.portfolio-tab').forEach(t => {
@@ -1688,7 +1687,7 @@ html
       reader.readAsText(file);
     });
 
-    // 최초 실행: 클라우드 동기화 시작
+    // 최초 실행 시 클라우드 동기화 구동
     initSupabaseSync();
   </script>
 </body>
