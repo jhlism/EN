@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>고정지출 & 저축 플래너 Pro</title>
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -13,17 +13,16 @@
 
   <!-- ========================================================================= -->
   <!-- ⭐ [초간편 설정] 17, 18번째 줄의 작은따옴표('') 사이에 키를 넣어주세요! ⭐ -->
-  <!-- 주의: URL 끝에 /rest/v1 이나 슬래시(/)를 붙이지 마세요. 예: https://xxxx.supabase.co -->
   <!-- ========================================================================= -->
   <script>
-    window.DEFAULT_SUPABASE_URL = 'https://zcirreplmjqplnbqpwwz.supabase.co'; // 👈 [17행] Project URL (예: 'https://xxxxxx.supabase.co')
-    window.DEFAULT_SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpjaXJyZXBsbWpxcGxuYnFwd3d6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI3MzUzNTgsImV4cCI6MjEwODMxMTM1OH0.fhP0eb5b728k9ERO1rCl-V2pLeveN47yN75oc-YeqIU'; // 👈 [18행] anon public 키 (예: 'eyJhbGciOiJIUzI1NiIsInR5cCI6...')
+    window.DEFAULT_SUPABASE_URL = ''; // 👈 [17행] Project URL (예: 'https://xxxxxx.supabase.co')
+    window.DEFAULT_SUPABASE_KEY = ''; // 👈 [18행] anon public 키 (예: 'eyJhbGciOiJIUzI1NiIsInR5cCI6...')
   </script>
   <!-- ========================================================================= -->
 
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700&display=swap');
-    body { font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif; }
+    body { font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif; touch-action: manipulation; }
     .badge-expense { background-color: #ffe4e6; color: #be123c; border: 1px solid #fecdd3; }
     .badge-savings { background-color: #dbeafe; color: #1d4ed8; border: 1px solid #bfdbfe; }
     .badge-variable { background-color: #fef3c7; color: #b45309; border: 1px solid #fde68a; }
@@ -52,7 +51,6 @@
         <p class="text-xs text-slate-500 mt-0.5" id="currentDateDisplay">오늘 기준 출금 스케줄</p>
       </div>
       <div class="flex items-center gap-1.5">
-        <!-- Supabase 동기화 설정 버튼 -->
         <button id="openSyncModalBtn" class="text-xs px-2.5 py-1.5 rounded-lg font-semibold flex items-center gap-1 shadow-sm transition bg-white border border-slate-200 text-slate-700 hover:bg-slate-50">
           <span id="headerSyncDot" class="w-2 h-2 rounded-full bg-amber-400"></span>
           <span id="headerSyncText">클라우드 연동</span>
@@ -194,7 +192,6 @@
         </button>
       </div>
 
-      <!-- 탭 컨텐츠 영역 -->
       <div id="portfolioContent" class="space-y-2.5 text-xs"></div>
     </section>
 
@@ -214,22 +211,28 @@
         </button>
       </div>
 
-      <!-- 검색 및 정렬 -->
+      <!-- 검색 및 명의 필터, 정렬 -->
       <div class="flex gap-2">
         <div class="relative flex-1">
           <i data-lucide="search" class="w-3.5 h-3.5 absolute left-2.5 top-2.5 text-slate-400"></i>
           <input type="text" id="searchInput" placeholder="항목명, 계좌명, 카드, 메모 검색" class="w-full pl-8 pr-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none" />
         </div>
+        <!-- 5번 기능: 부부 담당자 명의 필터 -->
+        <select id="ownerFilterSelect" class="bg-white border border-slate-200 rounded-lg px-2 py-1.5 text-xs text-slate-700 focus:outline-none">
+          <option value="all">👤 명의: 전체</option>
+          <option value="남편">남편</option>
+          <option value="아내">아내</option>
+          <option value="공동">공동</option>
+        </select>
         <select id="sortSelect" class="bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs text-slate-700 focus:outline-none">
-          <option value="day">결제일순 (1일~31일)</option>
-          <option value="upcomingFirst">다가오는 출금일순</option>
+          <option value="day">결제일순</option>
+          <option value="upcomingFirst">다가오는 출금순</option>
           <option value="amountDesc">금액 높은순</option>
           <option value="amountAsc">금액 낮은순</option>
         </select>
       </div>
     </div>
 
-    <!-- 안내 팁 -->
     <div class="flex items-center justify-between text-[11px] text-slate-400 px-1 mb-2">
       <span>💡 <b class="text-slate-600">금액</b>을 터치하면 이번 달 고지서 금액을 1초 만에 수정할 수 있습니다.</span>
       <span id="filteredCountText">총 0건</span>
@@ -247,7 +250,7 @@
 
   <!-- [모달 1] Supabase 실시간 동기화 설정 모달 -->
   <div id="syncModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-    <div class="bg-white rounded-2xl max-w-sm w-full p-5 shadow-2xl animate-in fade-in zoom-in-95 duration-150">
+    <div class="bg-white rounded-2xl max-w-sm w-full p-5 shadow-2xl">
       <div class="flex justify-between items-center mb-3">
         <div class="flex items-center gap-1.5">
           <i data-lucide="cloud" class="w-5 h-5 text-indigo-600"></i>
@@ -257,27 +260,18 @@
           <i data-lucide="x" class="w-5 h-5"></i>
         </button>
       </div>
-
       <p class="text-xs text-slate-600 mb-3 leading-relaxed">
-        Supabase에서 복사한 <b>Project URL</b>과 <b>anon public 키</b>를 아래에 붙여넣으시면, 아내분 폰과 실시간으로 연동됩니다.
+        Supabase에서 복사한 <b>Project URL</b>과 <b>anon public 키</b>를 입력하시면 아내분 폰과 실시간 연동됩니다.
       </p>
-
       <form id="syncConfigForm" class="space-y-3 text-xs">
         <div>
           <label class="block font-semibold text-slate-700 mb-1">1. Project URL *</label>
           <input type="url" id="cfgSupabaseUrl" required placeholder="https://xxxxxx.supabase.co" class="w-full px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none" />
-          <p class="text-[10px] text-slate-400 mt-1">※ 주의: 뒤에 /rest/v1 또는 슬래시(/)를 붙이지 마세요.</p>
         </div>
-
         <div>
           <label class="block font-semibold text-slate-700 mb-1">2. anon public API Key *</label>
-          <textarea id="cfgSupabaseKey" required rows="3" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6..." class="w-full px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none font-mono text-[11px]"></textarea>
+          <textarea id="cfgSupabaseKey" required rows="3" placeholder="eyJhbGciOiJIUzI1Ni..." class="w-full px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none font-mono text-[11px]"></textarea>
         </div>
-
-        <div class="bg-indigo-50 p-2.5 rounded-lg border border-indigo-100 text-[11px] text-indigo-900 space-y-1">
-          <p>💡 <b>코드 17~18행에 입력해 두시면</b> 모달 설정 없이도 모든 기기에서 즉시 자동 연동됩니다.</p>
-        </div>
-
         <div class="flex gap-2 pt-1">
           <button type="button" id="btnDisconnectSync" class="py-2.5 px-3 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-xl font-medium transition">연동 해제</button>
           <button type="submit" class="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-semibold shadow-sm transition">연동 및 저장</button>
@@ -288,7 +282,7 @@
 
   <!-- [모달 2] 항목 추가/수정 모달 -->
   <div id="itemModal" class="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-    <div class="bg-white rounded-2xl max-w-sm w-full p-5 shadow-xl animate-in fade-in zoom-in-95 duration-150 max-h-[90vh] overflow-y-auto">
+    <div class="bg-white rounded-2xl max-w-sm w-full p-5 shadow-xl max-h-[90vh] overflow-y-auto">
       <div class="flex justify-between items-center mb-4">
         <h3 id="modalTitle" class="text-base font-bold text-slate-900">고정 항목 추가</h3>
         <button id="closeModalBtn" type="button" class="text-slate-400 hover:text-slate-600 p-1">
@@ -303,7 +297,7 @@
 
         <!-- 1. 지출 분류 -->
         <div>
-          <label class="block font-semibold text-slate-700 mb-1.5">성격 구분 (통계 분류 기준) *</label>
+          <label class="block font-semibold text-slate-700 mb-1.5">성격 구분 *</label>
           <div class="grid grid-cols-2 gap-2">
             <button type="button" id="btnTypeExpense" class="flex items-center justify-center gap-1.5 py-2.5 rounded-xl border font-semibold transition bg-rose-50 border-rose-500 text-rose-700 shadow-sm">
               <i data-lucide="receipt" class="w-3.5 h-3.5"></i> 순수 지출
@@ -314,65 +308,74 @@
           </div>
         </div>
 
+        <!-- 5번 기능: 담당 명의 선택 -->
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">담당 명의 (부부 필터용) *</label>
+          <div class="grid grid-cols-3 gap-1.5">
+            <button type="button" data-owner="남편" class="owner-btn py-1.5 rounded-lg border text-xs font-medium bg-indigo-50 border-indigo-500 text-indigo-700">남편</button>
+            <button type="button" data-owner="아내" class="owner-btn py-1.5 rounded-lg border text-xs font-medium bg-white border-slate-200 text-slate-600">아내</button>
+            <button type="button" data-owner="공동" class="owner-btn py-1.5 rounded-lg border text-xs font-medium bg-white border-slate-200 text-slate-600">공동</button>
+          </div>
+          <input type="hidden" id="itemOwner" value="남편" />
+        </div>
+
         <!-- 2. 항목명 -->
         <div>
           <label class="block font-semibold text-slate-700 mb-1">항목명 *</label>
-          <input type="text" id="itemName" required placeholder="예: 아파트 관리비, 주담대, 청약통장" class="w-full px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none" />
+          <input type="text" id="itemName" required placeholder="예: 아파트 관리비, 주담대" class="w-full px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none text-sm" />
         </div>
 
         <!-- 금액 & 결제일 -->
         <div class="grid grid-cols-2 gap-2">
           <div>
             <label class="block font-semibold text-slate-700 mb-1">월 금액 (원) *</label>
-            <input type="number" id="itemAmount" required min="1" step="1" inputmode="numeric" placeholder="215000" class="w-full px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none" />
+            <input type="number" id="itemAmount" required min="1" step="1" inputmode="numeric" placeholder="215000" class="w-full px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none text-sm" />
           </div>
           <div>
             <label class="block font-semibold text-slate-700 mb-1">출금/결제일 (매월) *</label>
             <div class="flex items-center">
-              <input type="number" id="itemDay" required min="1" max="31" inputmode="numeric" placeholder="25" class="w-full px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none" />
+              <input type="number" id="itemDay" required min="1" max="31" inputmode="numeric" placeholder="25" class="w-full px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none text-sm" />
               <span class="ml-1.5 text-slate-500">일</span>
             </div>
           </div>
         </div>
 
-        <!-- 실시간 한글 금액 표기 & 원터치 추가 버튼 -->
         <div class="bg-slate-50 p-2.5 rounded-lg border border-slate-100">
           <div class="flex items-center justify-between text-[11px] mb-1.5">
             <span class="text-slate-500">금액 미리보기:</span>
             <span id="amountKoreanPreview" class="font-bold text-indigo-600">0원</span>
           </div>
           <div class="flex flex-wrap gap-1">
-            <button type="button" class="quick-amt-btn px-2 py-0.5 bg-white border border-slate-200 rounded text-[10px] text-slate-600 hover:border-indigo-400" data-amt="10000">+1만</button>
-            <button type="button" class="quick-amt-btn px-2 py-0.5 bg-white border border-slate-200 rounded text-[10px] text-slate-600 hover:border-indigo-400" data-amt="50000">+5만</button>
-            <button type="button" class="quick-amt-btn px-2 py-0.5 bg-white border border-slate-200 rounded text-[10px] text-slate-600 hover:border-indigo-400" data-amt="100000">+10만</button>
-            <button type="button" class="quick-amt-btn px-2 py-0.5 bg-white border border-slate-200 rounded text-[10px] text-slate-600 hover:border-indigo-400" data-amt="500000">+50만</button>
-            <button type="button" class="quick-amt-btn px-2 py-0.5 bg-white border border-slate-200 rounded text-[10px] text-slate-600 hover:border-indigo-400" data-amt="1000000">+100만</button>
-            <button type="button" id="btnResetAmt" class="px-2 py-0.5 bg-slate-200 rounded text-[10px] text-slate-600 hover:bg-slate-300">정정</button>
+            <button type="button" class="quick-amt-btn px-2 py-0.5 bg-white border border-slate-200 rounded text-[10px] text-slate-600" data-amt="10000">+1만</button>
+            <button type="button" class="quick-amt-btn px-2 py-0.5 bg-white border border-slate-200 rounded text-[10px] text-slate-600" data-amt="50000">+5만</button>
+            <button type="button" class="quick-amt-btn px-2 py-0.5 bg-white border border-slate-200 rounded text-[10px] text-slate-600" data-amt="100000">+10만</button>
+            <button type="button" class="quick-amt-btn px-2 py-0.5 bg-white border border-slate-200 rounded text-[10px] text-slate-600" data-amt="500000">+50만</button>
+            <button type="button" id="btnResetAmt" class="px-2 py-0.5 bg-slate-200 rounded text-[10px] text-slate-600">정정</button>
           </div>
         </div>
 
-        <!-- 변동 고정비 설정 토글 -->
+        <!-- 변동 고정비 설정 토글 (4번 기능 연계) -->
         <div class="p-2.5 rounded-xl border border-amber-200/80 bg-amber-50/40">
           <div class="flex items-center justify-between">
             <div>
               <span class="font-semibold text-slate-800 block text-[11px]">⚡ 매달 금액이 바뀌는 변동 고정비인가요?</span>
-              <span class="text-[10px] text-slate-500">아파트 관리비·공과금 등 매달 고지서 금액이 다른 항목 표시</span>
+              <span class="text-[10px] text-slate-500">관리비 등 평소 기준액 대비 증감 비교용</span>
             </div>
             <button type="button" id="btnToggleVariable" class="px-2.5 py-1 rounded-lg border text-[11px] font-semibold bg-white border-slate-200 text-slate-500 transition shrink-0">
               고정액
             </button>
           </div>
           <div id="variableBaseInputArea" class="hidden mt-2 pt-2 border-t border-amber-200/60 flex items-center justify-between gap-2">
-            <span class="text-[11px] text-amber-900 font-medium shrink-0">평소 평균(예산) 기준액:</span>
-            <input type="number" id="itemBaseAmount" min="0" step="1" inputmode="numeric" placeholder="예: 220000 (선택)" class="w-36 px-2.5 py-1 border border-amber-300 rounded-lg text-xs bg-white focus:outline-none" />
+            <span class="text-[11px] text-amber-900 font-medium shrink-0">평소 평균(기준액):</span>
+            <input type="number" id="itemBaseAmount" min="0" step="1" inputmode="numeric" placeholder="예: 220000" class="w-36 px-2.5 py-1 border border-amber-300 rounded-lg text-xs bg-white focus:outline-none" />
           </div>
         </div>
 
-        <!-- 3. 결제 수단 & 출금 계좌 상세 -->
+        <!-- 결제 수단 & 출금 계좌 상세 -->
         <div class="grid grid-cols-5 gap-2">
           <div class="col-span-2">
             <label class="block font-semibold text-slate-700 mb-1">결제 수단 *</label>
-            <select id="itemPaymentMethod" class="w-full px-2.5 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none bg-white">
+            <select id="itemPaymentMethod" class="w-full px-2.5 py-2 border border-slate-200 rounded-lg bg-white text-xs">
               <option value="account">🏦 계좌이체</option>
               <option value="credit">💳 신용카드</option>
               <option value="check">💳 체크카드</option>
@@ -380,22 +383,16 @@
             </select>
           </div>
           <div class="col-span-3">
-            <div class="flex items-center justify-between mb-1">
-              <label class="font-semibold text-slate-700">출금 계좌 / 카드명 *</label>
-            </div>
-            <div class="relative">
-              <input type="text" id="itemPaymentDetail" list="paymentDetailDataList" autocomplete="off" placeholder="예: 우리꿈, 국민은행, 현대카드" class="w-full px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none pr-7" />
-              <i data-lucide="history" class="w-3.5 h-3.5 text-slate-400 absolute right-2 top-2.5 pointer-events-none"></i>
-            </div>
+            <label class="font-semibold text-slate-700 block mb-1">출금 계좌 / 카드명 *</label>
+            <input type="text" id="itemPaymentDetail" list="paymentDetailDataList" autocomplete="off" placeholder="예: 우리꿈, 국민은행" class="w-full px-3 py-2 border border-slate-200 rounded-lg text-xs" />
           </div>
         </div>
         <datalist id="paymentDetailDataList"></datalist>
-        <div id="paymentDetailChips" class="flex flex-wrap gap-1 -mt-2 empty:hidden"></div>
 
-        <!-- 4. 카테고리 -->
+        <!-- 카테고리 -->
         <div>
           <label class="block font-semibold text-slate-700 mb-1">카테고리 *</label>
-          <select id="itemCategory" class="w-full px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none bg-white">
+          <select id="itemCategory" class="w-full px-3 py-2 border border-slate-200 rounded-lg bg-white text-xs">
             <option value="주거/통신">🏠 주거 / 통신 / 관리비</option>
             <option value="금융/보험">🏦 금융 / 대출원리금 / 보험</option>
             <option value="저축/투자">💰 적금 / 청약 / 연금 / ETF</option>
@@ -405,81 +402,39 @@
           </select>
         </div>
 
-        <!-- 5. 메모 -->
+        <!-- 메모 -->
         <div>
-          <div class="flex items-center justify-between mb-1">
-            <label class="font-semibold text-slate-700">메모 (선택)</label>
-            <span class="text-[10px] text-indigo-500 font-normal">자주 쓴 메모 제안</span>
-          </div>
-          <div class="relative">
-            <input type="text" id="itemMemo" list="memoDataList" autocomplete="off" placeholder="예: 전기·수도 포함, 고정금리 3.8%" class="w-full px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none pr-8" />
-            <i data-lucide="history" class="w-3.5 h-3.5 text-slate-400 absolute right-2.5 top-2.5 pointer-events-none"></i>
-          </div>
-          <datalist id="memoDataList"></datalist>
-          <div id="memoChips" class="flex flex-wrap gap-1 mt-1.5 empty:hidden"></div>
+          <label class="font-semibold text-slate-700 block mb-1">메모 (선택)</label>
+          <input type="text" id="itemMemo" placeholder="예: 전기·수도 포함" class="w-full px-3 py-2 border border-slate-200 rounded-lg text-xs" />
         </div>
 
-        <!-- 6. 지출 기한 더보기 옵션 -->
-        <details id="moreOptionsDetails" class="group border border-slate-200/90 rounded-xl p-3 bg-slate-50/70 transition-colors">
-          <summary class="flex justify-between items-center cursor-pointer list-none text-xs font-semibold text-slate-700 hover:text-slate-900 select-none">
+        <!-- 3번 기능 연계: 약정 만기 설정 -->
+        <details id="moreOptionsDetails" class="group border border-slate-200/90 rounded-xl p-3 bg-slate-50/70">
+          <summary class="flex justify-between items-center cursor-pointer list-none text-xs font-semibold text-slate-700 select-none">
             <span class="flex items-center gap-1.5">
               <i data-lucide="calendar" class="w-3.5 h-3.5 text-indigo-500"></i>
-              더보기 (지출 기한 / 적금 만기 설정)
+              더보기 (적금 만기 / 할부 기한 설정 - 자동 제외 기능)
             </span>
             <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-slate-400 transition-transform group-open:rotate-180"></i>
           </summary>
           <div class="mt-3 pt-2.5 border-t border-slate-200 space-y-2.5">
-            <div>
-              <label class="block font-semibold text-slate-700 mb-1 text-[11px]">기한 설정 방식</label>
-              <div class="grid grid-cols-2 gap-1.5">
-                <button type="button" id="btnDurationIndefinite" class="py-1.5 rounded-lg border text-xs font-medium bg-indigo-50 border-indigo-500 text-indigo-700 transition">
-                  무기한 (계속)
-                </button>
-                <button type="button" id="btnDurationFixed" class="py-1.5 rounded-lg border text-xs font-medium bg-white border-slate-200 text-slate-600 transition">
-                  기한 지정 (월)
-                </button>
-              </div>
+            <div class="grid grid-cols-2 gap-1.5">
+              <button type="button" id="btnDurationIndefinite" class="py-1.5 rounded-lg border text-xs font-medium bg-indigo-50 border-indigo-500 text-indigo-700">무기한 (계속)</button>
+              <button type="button" id="btnDurationFixed" class="py-1.5 rounded-lg border text-xs font-medium bg-white border-slate-200 text-slate-600">기한 지정 (월)</button>
             </div>
-
-            <!-- 기한 입력 영역 -->
             <div id="durationInputArea" class="hidden space-y-2 pt-1">
               <div>
                 <label class="block font-medium text-slate-700 mb-1 text-[11px]">총 기간 (개월 수) *</label>
-                <div class="flex items-center gap-1.5">
-                  <input type="number" id="itemDurationMonths" min="1" step="1" inputmode="numeric" placeholder="12" class="w-full px-2.5 py-1.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none text-xs bg-white" />
-                  <span class="text-slate-500 text-xs shrink-0 font-medium">개월</span>
-                </div>
+                <input type="number" id="itemDurationMonths" min="1" step="1" inputmode="numeric" placeholder="12" class="w-full px-2.5 py-1.5 border border-slate-200 rounded-lg text-xs bg-white" />
               </div>
-
-              <!-- 빠른 개월 수 선택 칩 -->
-              <div class="flex gap-1">
-                <button type="button" class="quick-month-btn flex-1 py-1 bg-white border border-slate-200 rounded text-[10px] text-slate-600 hover:border-indigo-400 font-medium" data-month="6">6개월</button>
-                <button type="button" class="quick-month-btn flex-1 py-1 bg-white border border-slate-200 rounded text-[10px] text-slate-600 hover:border-indigo-400 font-medium" data-month="12">12개월</button>
-                <button type="button" class="quick-month-btn flex-1 py-1 bg-white border border-slate-200 rounded text-[10px] text-slate-600 hover:border-indigo-400 font-medium" data-month="24">24개월</button>
-                <button type="button" class="quick-month-btn flex-1 py-1 bg-white border border-slate-200 rounded text-[10px] text-slate-600 hover:border-indigo-400 font-medium" data-month="36">36개월</button>
-              </div>
-
-              <!-- 시작년월 -->
               <div>
-                <label class="block font-medium text-slate-700 mb-1 text-[11px]">시작년월 (선택, 진행 회차 추적용)</label>
-                <input type="month" id="itemStartYearMonth" class="w-full px-2.5 py-1.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none text-xs bg-white" />
-              </div>
-
-              <!-- 만기 총액 요약 미리보기 카드 -->
-              <div id="maturitySummaryBox" class="bg-indigo-50/80 border border-indigo-100 rounded-lg p-2.5 text-[11px] text-indigo-900 space-y-0.5">
-                <div class="flex justify-between font-semibold">
-                  <span>만기 총 예상액:</span>
-                  <span id="maturityTotalAmountText">0원</span>
-                </div>
-                <div id="maturityInfoText" class="text-[10px] text-indigo-600">
-                  ※ 기간과 금액을 입력하면 총액이 계산됩니다.
-                </div>
+                <label class="block font-medium text-slate-700 mb-1 text-[11px]">시작년월 (만기 자동 계산용) *</label>
+                <input type="month" id="itemStartYearMonth" class="w-full px-2.5 py-1.5 border border-slate-200 rounded-lg text-xs bg-white" />
               </div>
             </div>
           </div>
         </details>
 
-        <!-- 버튼 영역 -->
         <div class="flex gap-2 pt-2">
           <button type="button" id="cancelModalBtn" class="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-medium transition">취소</button>
           <button type="submit" id="submitItemBtn" class="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-semibold shadow-sm transition">저장하기</button>
@@ -488,16 +443,14 @@
     </div>
   </div>
 
-  <!-- ======================================================== -->
-  <!-- 자바스크립트 내부 메인 로직                                 -->
-  <!-- ======================================================== -->
   <script>
     const CONFIG_STORAGE_KEY = 'budget_supabase_config';
-    const STORAGE_KEY = 'fixed_expenses_v3';
+    const STORAGE_KEY = 'fixed_expenses_v4';
     const HISTORY_STORAGE_PREFIX = 'budget_frequent_';
 
     let supabaseClient = null;
     let realtimeChannel = null;
+    let isLocalMutating = false;
 
     let expenses = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
     let currentFilter = 'all';
@@ -508,15 +461,19 @@
     const currentYear = today.getFullYear();
     const currentMonth = today.getMonth() + 1;
     const currentDay = today.getDate();
+    const lastDayOfMonth = new Date(currentYear, currentMonth, 0).getDate();
+
     document.getElementById('currentDateDisplay').textContent = 
       `오늘(${currentMonth}월 ${currentDay}일) 기준 계좌별 출금 스케줄`;
 
-    // URL 및 Key 자동 정제 함수 (뒤에 /rest/v1 또는 슬래시가 붙어도 자동 보정)
+    function getEffectiveDay(day) {
+      return Math.min(Number(day) || 1, lastDayOfMonth);
+    }
+
     function cleanSupabaseUrl(rawUrl) {
       if (!rawUrl) return '';
       let str = rawUrl.trim().replace(/^['"]|['"]$/g, '');
       try {
-        // 혹시 대시보드 URL(https://supabase.com/dashboard/project/xxxx)을 넣은 경우 자동 파싱
         if (str.includes('/project/')) {
           const parts = str.split('/project/');
           if (parts[1]) {
@@ -539,7 +496,20 @@
       return rawKey.trim().replace(/^['"]|['"]$/g, '');
     }
 
-    // DB 컬럼(snake_case) <-> 앱 상태(camelCase) 변환기
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str).replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]));
+    }
+
+    // --- 3번 기능 연계: 만기 종료 여부 판별 함수 ---
+    function checkIsMatured(item) {
+      if (!item.durationMonths || !item.startYearMonth) return false;
+      const [sYear, sMonth] = item.startYearMonth.split('-').map(Number);
+      const elapsedMonths = (currentYear - sYear) * 12 + (currentMonth - sMonth);
+      // 이미 약정 개월 수 이상 경과했으면 만기 종료
+      return elapsedMonths >= item.durationMonths;
+    }
+
     function mapFromDB(row) {
       return {
         id: String(row.id),
@@ -550,12 +520,12 @@
         day: Number(row.day) || 1,
         category: row.category || '기타',
         type: row.type || 'expense',
-        userConfirmedType: true,
         paymentMethod: row.payment_method || 'account',
         paymentDetail: (row.payment_detail || '').trim(),
         memo: (row.memo || '').trim(),
         durationMonths: (row.duration_months && Number(row.duration_months) > 0) ? Number(row.duration_months) : null,
-        startYearMonth: row.start_year_month || null
+        startYearMonth: row.start_year_month || null,
+        owner: row.owner || '남편'
       };
     }
 
@@ -573,22 +543,19 @@
         payment_detail: item.paymentDetail || '',
         memo: item.memo || '',
         duration_months: item.durationMonths ? Number(item.durationMonths) : null,
-        start_year_month: item.startYearMonth || null
+        start_year_month: item.startYearMonth || null,
+        owner: item.owner || '남편'
       };
     }
 
-    // --- Supabase 초기화 및 실시간 동기화 엔진 ---
     function getStoredSupabaseConfig() {
       try {
         const saved = JSON.parse(localStorage.getItem(CONFIG_STORAGE_KEY) || '{}');
         const defaultUrl = (window.DEFAULT_SUPABASE_URL || '').trim();
         const defaultKey = (window.DEFAULT_SUPABASE_KEY || '').trim();
-
-        const rawUrl = (defaultUrl !== '') ? defaultUrl : (saved.url || '');
-        const rawKey = (defaultKey !== '') ? defaultKey : (saved.key || '');
         return {
-          url: cleanSupabaseUrl(rawUrl),
-          key: cleanSupabaseKey(rawKey)
+          url: cleanSupabaseUrl(defaultUrl !== '' ? defaultUrl : (saved.url || '')),
+          key: cleanSupabaseKey(defaultKey !== '' ? defaultKey : (saved.key || ''))
         };
       } catch (e) {
         return { url: '', key: '' };
@@ -605,27 +572,28 @@
 
       if (status === 'connected') {
         banner.className = 'mb-4 p-2.5 rounded-xl border flex items-center justify-between text-xs bg-emerald-50 border-emerald-200 text-emerald-950';
+        bannerIcon.setAttribute('data-lucide', 'cloud');
         bannerIcon.className = 'w-4 h-4 text-emerald-600 shrink-0';
         bannerTitle.textContent = '🟢 부부 실시간 클라우드 동기화 켜짐';
-        bannerDesc.textContent = '아내분과 남편분의 스마트폰이 실시간으로 연결되어 즉시 동기화됩니다.';
+        bannerDesc.textContent = '아내분과 남편분의 스마트폰이 실시간으로 연결되어 있습니다.';
         headerDot.className = 'w-2 h-2 rounded-full bg-emerald-500 animate-pulse';
         headerText.textContent = '실시간 연동중';
-        document.getElementById('bannerActionBtn').textContent = '연동 상태';
       } else if (status === 'connecting') {
         banner.className = 'mb-4 p-2.5 rounded-xl border flex items-center justify-between text-xs bg-indigo-50 border-indigo-200 text-indigo-950';
-        bannerIcon.className = 'w-4 h-4 text-indigo-600 shrink-0';
+        bannerIcon.setAttribute('data-lucide', 'refresh-cw');
+        bannerIcon.className = 'w-4 h-4 text-indigo-600 shrink-0 animate-spin';
         bannerTitle.textContent = '🔄 클라우드 연결 및 동기화 중...';
         bannerDesc.textContent = 'Supabase 서버와 데이터를 맞추고 있습니다.';
         headerDot.className = 'w-2 h-2 rounded-full bg-indigo-400';
         headerText.textContent = '연결중...';
       } else {
         banner.className = 'mb-4 p-2.5 rounded-xl border flex items-center justify-between text-xs bg-amber-50 border-amber-200 text-amber-900';
+        bannerIcon.setAttribute('data-lucide', 'cloud-off');
         bannerIcon.className = 'w-4 h-4 text-amber-600 shrink-0';
         bannerTitle.textContent = '⚠️ 현재 개별 폰 저장 모드 (동기화 미연동)';
-        bannerDesc.textContent = message || '아내분이 등록한 내역을 실시간으로 함께 보시려면 Supabase 키를 입력하세요.';
+        bannerDesc.textContent = message || '아내분과 실시간으로 공유하려면 Supabase 키를 입력하세요.';
         headerDot.className = 'w-2 h-2 rounded-full bg-amber-400';
         headerText.textContent = '동기화 미연동';
-        document.getElementById('bannerActionBtn').textContent = '연동 설정';
       }
       lucide.createIcons();
     }
@@ -641,82 +609,54 @@
       updateSyncUI('connecting');
 
       try {
-        if (!window.supabase) {
-          throw new Error('Supabase 라이브러리를 불러오지 못했습니다.');
-        }
-
+        if (!window.supabase) throw new Error('Supabase 라이브러리 로드 실패');
         supabaseClient = window.supabase.createClient(cfg.url, cfg.key);
 
-        // 1. 초기 데이터 가져오기
-        const { data, error } = await supabaseClient
-          .from('fixed_expenses')
-          .select('*')
-          .order('day', { ascending: true });
-
+        const { data, error } = await supabaseClient.from('fixed_expenses').select('*').order('day', { ascending: true });
         if (error) throw error;
 
-        if (data) {
+        if (data && data.length > 0) {
           expenses = data.map(mapFromDB);
           localStorage.setItem(STORAGE_KEY, JSON.stringify(expenses));
           render();
+        } else if (data && data.length === 0 && expenses.length > 0) {
+          await supabaseClient.from('fixed_expenses').upsert(expenses.map(mapToDB));
         }
 
         updateSyncUI('connected');
 
-        // 2. 실시간 동기화 구독
-        if (realtimeChannel) {
-          supabaseClient.removeChannel(realtimeChannel);
-        }
-
-        realtimeChannel = supabaseClient
-          .channel('realtime_fixed_expenses_changes')
-          .on(
-            'postgres_changes',
-            { event: '*', schema: 'public', table: 'fixed_expenses' },
-            async () => {
-              const res = await supabaseClient
-                .from('fixed_expenses')
-                .select('*')
-                .order('day', { ascending: true });
-              if (res.data) {
-                expenses = res.data.map(mapFromDB);
-                localStorage.setItem(STORAGE_KEY, JSON.stringify(expenses));
-                render();
-                showToast('아내분의 변경 사항이 실시간으로 반영되었습니다! 🔄');
-              }
+        if (realtimeChannel) supabaseClient.removeChannel(realtimeChannel);
+        realtimeChannel = supabaseClient.channel('realtime_fixed_expenses_changes')
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'fixed_expenses' }, async () => {
+            if (isLocalMutating) return;
+            const res = await supabaseClient.from('fixed_expenses').select('*').order('day', { ascending: true });
+            if (res.data) {
+              expenses = res.data.map(mapFromDB);
+              localStorage.setItem(STORAGE_KEY, JSON.stringify(expenses));
+              render();
+              showToast('아내분의 변경 사항이 실시간 반영되었습니다! 🔄');
             }
-          )
+          })
           .subscribe();
-
       } catch (err) {
-        console.error('Supabase Sync Error:', err);
-        let errorMsg = err.message || '설정을 확인하세요';
-        if (errorMsg.includes('Invalid path')) {
-          errorMsg = 'URL 경로 오류: Project URL 뒤의 /rest/v1 또는 슬래시(/)를 지우고 https://xxxx.supabase.co 형식만 남겨주세요.';
-        }
-        updateSyncUI('disconnected', `연결 오류: ${errorMsg}`);
+        updateSyncUI('disconnected', `연결 오류: ${err.message}`);
         render();
       }
     }
 
-    // 로컬 및 클라우드 동시 저장 함수
     async function syncSaveItem(item) {
       const idx = expenses.findIndex(i => i.id === item.id);
-      if (idx !== -1) {
-        expenses[idx] = item;
-      } else {
-        expenses.push(item);
-      }
+      if (idx !== -1) expenses[idx] = item;
+      else expenses.push(item);
+
       localStorage.setItem(STORAGE_KEY, JSON.stringify(expenses));
       render();
 
       if (supabaseClient) {
-        const payload = mapToDB(item);
-        const { error } = await supabaseClient.from('fixed_expenses').upsert(payload);
-        if (error) {
-          console.error('Cloud save failed:', error);
-          showToast('⚠️ 클라우드 전송 실패: ' + error.message);
-        }
+        isLocalMutating = true;
+        const { error } = await supabaseClient.from('fixed_expenses').upsert(mapToDB(item));
+        setTimeout(() => { isLocalMutating = false; }, 600);
+        if (error) showToast('⚠️ 클라우드 전송 실패: ' + error.message);
       }
     }
 
@@ -726,20 +666,21 @@
       render();
 
       if (supabaseClient) {
+        isLocalMutating = true;
         const { error } = await supabaseClient.from('fixed_expenses').delete().eq('id', id);
-        if (error) {
-          console.error('Cloud delete failed:', error);
-          showToast('⚠️ 클라우드 삭제 실패: ' + error.message);
-        }
+        setTimeout(() => { isLocalMutating = false; }, 600);
+        if (error) showToast('⚠️ 클라우드 삭제 실패: ' + error.message);
       }
     }
 
+    let toastTimer = null;
     function showToast(message) {
       const toast = document.getElementById('toast');
       document.getElementById('toastMsg').textContent = message;
       toast.classList.remove('opacity-0', 'pointer-events-none', 'translate-y-[-10px]');
       toast.classList.add('opacity-100', 'translate-y-0');
-      setTimeout(() => {
+      if (toastTimer) clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => {
         toast.classList.add('opacity-0', 'pointer-events-none', 'translate-y-[-10px]');
         toast.classList.remove('opacity-100', 'translate-y-0');
       }, 2500);
@@ -751,400 +692,98 @@
       const eok = Math.floor(n / 100000000);
       const man = Math.floor((n % 100000000) / 10000);
       const rest = n % 10000;
-      let result = '';
-      if (eok > 0) result += `${eok}억 `;
-      if (man > 0) result += `${man.toLocaleString()}만 `;
-      if (rest > 0 || result === '') result += `${rest.toLocaleString()}원`;
-      else result += '원';
-      return result.trim();
+      let res = '';
+      if (eok > 0) res += `${eok}억 `;
+      if (man > 0) res += `${man.toLocaleString()}만 `;
+      if (rest > 0 || res === '') res += `${rest.toLocaleString()}원`;
+      return res.trim();
     }
 
     function getScheduleBadge(day) {
-      const diff = day - currentDay;
-      if (diff === 0) {
-        return '<span class="text-[10px] bg-rose-500 text-white font-bold px-2 py-0.5 rounded-full animate-pulse">오늘 출금일</span>';
-      } else if (diff > 0) {
-        return `<span class="text-[10px] bg-indigo-100 text-indigo-800 font-bold px-2 py-0.5 rounded-full">${day}일까지 (D-${diff})</span>`;
-      } else {
-        return `<span class="text-[10px] bg-slate-100 text-slate-400 font-medium px-2 py-0.5 rounded-full">이번달 경과 (${day}일)</span>`;
-      }
+      const effDay = getEffectiveDay(day);
+      const diff = effDay - currentDay;
+      if (diff === 0) return '<span class="text-[10px] bg-rose-500 text-white font-bold px-2 py-0.5 rounded-full animate-pulse">오늘 출금일</span>';
+      if (diff > 0) return `<span class="text-[10px] bg-indigo-100 text-indigo-800 font-bold px-2 py-0.5 rounded-full">${effDay}일까지 (D-${diff})</span>`;
+      return `<span class="text-[10px] bg-slate-100 text-slate-400 font-medium px-2 py-0.5 rounded-full">이번달 경과</span>`;
     }
 
-    function getPaymentBadge(method, detail) {
+    function getPaymentBadge(method, detail, owner) {
       const icons = { account: '🏦 계좌', credit: '💳 신용', check: '💳 체크', direct: '💸 송금' };
       const label = icons[method] || '기타';
-      const detailText = detail ? ` · <b class="text-slate-800">${detail}</b>` : ' · <span class="text-slate-400">계좌미지정</span>';
-      return `<span class="text-[10px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded border border-slate-200 font-normal">${label}${detailText}</span>`;
+      const detailText = detail ? ` · <b class="text-slate-800">${escapeHtml(detail)}</b>` : '';
+      const ownerBadge = owner ? `<span class="bg-indigo-50 text-indigo-700 px-1 py-0.2 rounded font-bold">${owner}</span>` : '';
+      return `<span class="text-[10px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded border border-slate-200">${ownerBadge} ${label}${detailText}</span>`;
     }
 
-    function getDurationProgress(durationMonths, startYearMonth) {
-      if (!durationMonths) return null;
-      if (startYearMonth) {
-        const [sYear, sMonth] = startYearMonth.split('-').map(Number);
-        const elapsedMonths = (currentYear - sYear) * 12 + (currentMonth - sMonth);
-        const currentRound = Math.max(1, Math.min(durationMonths, elapsedMonths + 1));
-        const remaining = Math.max(0, durationMonths - currentRound);
-        const pct = Math.min(100, Math.round((currentRound / durationMonths) * 100));
-        return { currentRound, durationMonths, remaining, pct, isCompleted: currentRound >= durationMonths };
-      }
-      return { currentRound: null, durationMonths, remaining: durationMonths, pct: null, isCompleted: false };
-    }
-
-    function getDurationBadge(durationMonths, startYearMonth) {
-      const info = getDurationProgress(durationMonths, startYearMonth);
-      if (!info) return '';
-      if (info.currentRound !== null) {
-        if (info.isCompleted) {
-          return `<span class="text-[10px] bg-emerald-50 text-emerald-700 px-1.5 py-0.5 rounded border border-emerald-200 font-medium">만기 달성 (${durationMonths}회)</span>`;
-        }
-        return `<span class="text-[10px] bg-indigo-50 text-indigo-700 px-1.5 py-0.5 rounded border border-indigo-200 font-medium">${info.currentRound}/${durationMonths}회 (잔여 ${info.remaining}개월)</span>`;
-      }
-      return `<span class="text-[10px] bg-indigo-50 text-indigo-700 px-1.5 py-0.5 rounded border border-indigo-200 font-medium">${durationMonths}개월 약정</span>`;
-    }
-
-    function getFrequentItems(field) {
-      const counts = {};
-      expenses.forEach(item => {
-        const val = (item[field] || '').trim();
-        if (val) counts[val] = (counts[val] || 0) + 2;
-      });
-      try {
-        const savedHistory = JSON.parse(localStorage.getItem(HISTORY_STORAGE_PREFIX + field)) || [];
-        savedHistory.forEach((val, idx) => {
-          if (val) counts[val] = (counts[val] || 0) + (savedHistory.length - idx);
-        });
-      } catch (e) {}
-      return Object.keys(counts).sort((a, b) => counts[b] - counts[a]);
-    }
-
-    function saveToFrequentHistory(field, val) {
-      if (!val || !val.trim()) return;
-      const cleanVal = val.trim();
-      try {
-        let history = JSON.parse(localStorage.getItem(HISTORY_STORAGE_PREFIX + field)) || [];
-        history = history.filter(v => v !== cleanVal);
-        history.unshift(cleanVal);
-        if (history.length > 25) history = history.slice(0, 25);
-        localStorage.setItem(HISTORY_STORAGE_PREFIX + field, JSON.stringify(history));
-      } catch (e) {}
-    }
-
-    function updateSuggestionUI() {
-      renderFieldSuggestions('paymentDetail', 'paymentDetailDataList', 'paymentDetailChips', itemPaymentDetail);
-      renderFieldSuggestions('memo', 'memoDataList', 'memoChips', itemMemo);
-    }
-
-    function renderFieldSuggestions(field, dataListId, chipsContainerId, targetInput) {
-      const frequentList = getFrequentItems(field);
-      const dataListEl = document.getElementById(dataListId);
-      const chipsEl = document.getElementById(chipsContainerId);
-
-      if (dataListEl) {
-        dataListEl.innerHTML = frequentList.map(val => `<option value="${val}"></option>`).join('');
-      }
-      if (chipsEl) {
-        chipsEl.innerHTML = '';
-        frequentList.slice(0, 4).forEach(val => {
-          const chipBtn = document.createElement('button');
-          chipBtn.type = 'button';
-          chipBtn.className = 'text-[10px] bg-slate-100 hover:bg-indigo-50 active:bg-indigo-100 text-slate-700 hover:text-indigo-700 px-2 py-0.5 rounded-md border border-slate-200 hover:border-indigo-300 font-medium transition flex items-center gap-1 shrink-0';
-          chipBtn.innerHTML = `<span>${val}</span>`;
-          chipBtn.addEventListener('click', () => {
-            targetInput.value = val;
-            targetInput.focus();
-          });
-          chipsEl.appendChild(chipBtn);
-        });
-      }
-    }
-
-    // --- 대시보드 렌더링 ---
     function renderPortfolioSection(expMonthly, savMonthly, totalMonthly) {
       const expRate = totalMonthly > 0 ? Math.round((expMonthly / totalMonthly) * 100) : 0;
       const savRate = totalMonthly > 0 ? (100 - expRate) : 0;
 
       document.getElementById('barExpenseText').textContent = `${expMonthly.toLocaleString()}원 (${expRate}%)`;
       document.getElementById('barSavingsText').textContent = `${savMonthly.toLocaleString()}원 (${savRate}%)`;
-      document.getElementById('barExpenseFill').style.width = totalMonthly > 0 ? `${expRate}%` : '50%';
-      document.getElementById('barSavingsFill').style.width = totalMonthly > 0 ? `${savRate}%` : '50%';
+      document.getElementById('barExpenseFill').style.width = `${expRate}%`;
+      document.getElementById('barSavingsFill').style.width = `${savRate}%`;
 
       const container = document.getElementById('portfolioContent');
-      if (expenses.length === 0) {
-        container.innerHTML = `<div class="text-center py-6 text-slate-400 text-xs">등록된 항목이 없습니다. 항목을 추가하면 계좌별 필요 금액 스케줄이 표시됩니다.</div>`;
+      // 만기 종료되지 않은 활성 항목만 필터링
+      const activeExpenses = expenses.filter(i => !checkIsMatured(i));
+
+      if (activeExpenses.length === 0) {
+        container.innerHTML = `<div class="text-center py-6 text-slate-400 text-xs">등록된 활성 항목이 없습니다.</div>`;
         return;
       }
 
       if (currentPortfolioTab === 'account') {
         const groups = {};
-        expenses.forEach(item => {
-          const methodLabels = { account: '🏦 계좌', credit: '💳 신용', check: '💳 체크', direct: '💸 송금' };
-          const methodPrefix = methodLabels[item.paymentMethod] || '기타';
+        activeExpenses.forEach(item => {
           const accountName = item.paymentDetail ? item.paymentDetail : '상세 미지정';
           const key = `${accountName}__${item.paymentMethod}`;
-
-          if (!groups[key]) {
-            groups[key] = { accountName, methodPrefix, totalMonthly: 0, remainingFromToday: 0, passedAmount: 0, items: [] };
-          }
+          if (!groups[key]) groups[key] = { accountName, totalMonthly: 0, remainingFromToday: 0, items: [] };
           groups[key].totalMonthly += item.amount;
-          if (item.day >= currentDay) {
-            groups[key].remainingFromToday += item.amount;
-          } else {
-            groups[key].passedAmount += item.amount;
-          }
+          const effDay = getEffectiveDay(item.day);
+          if (effDay >= currentDay) groups[key].remainingFromToday += item.amount;
           groups[key].items.push(item);
         });
 
-        const sortedKeys = Object.keys(groups).sort((a, b) => {
-          if (groups[b].remainingFromToday !== groups[a].remainingFromToday) {
-            return groups[b].remainingFromToday - groups[a].remainingFromToday;
-          }
-          return groups[b].totalMonthly - groups[a].totalMonthly;
-        });
-
-        container.innerHTML = `
-          <div class="bg-indigo-50/80 border border-indigo-100 rounded-xl p-2.5 text-[11px] text-indigo-950 mb-2">
-            💡 <b>계좌별 필요 잔액 요약:</b> 오늘(<b>${currentDay}일</b>)부터 말일까지 각 계좌에 <b>며칠까지 얼마가 들어있어야 하는지</b> 보여줍니다.
-          </div>
-          <div class="space-y-2.5">
-            ${sortedKeys.map(key => {
-              const g = groups[key];
-              const sortedItems = [...g.items].sort((a, b) => a.day - b.day);
-              const upcomingItems = sortedItems.filter(i => i.day >= currentDay);
-              const passedItems = sortedItems.filter(i => i.day < currentDay);
-
-              let cumulativeNeeded = 0;
-              const upcomingStepsHtml = upcomingItems.map(item => {
-                cumulativeNeeded += item.amount;
-                const dDay = item.day === currentDay ? '오늘' : `D-${item.day - currentDay}`;
-                return `
-                  <div class="flex items-center justify-between py-1.5 px-2.5 rounded-lg bg-white border border-indigo-100/90 shadow-2xs">
-                    <div class="flex items-center gap-2 min-w-0">
-                      <span class="text-[11px] font-bold text-indigo-700 bg-indigo-50 px-1.5 py-0.5 rounded shrink-0">${item.day}일까지 (${dDay})</span>
-                      <span class="text-xs font-semibold text-slate-800 truncate">${item.name}</span>
-                      ${item.isVariable ? '<span class="text-[9px] badge-variable px-1 py-0.2 rounded font-semibold shrink-0">⚡변동</span>' : ''}
-                    </div>
-                    <div class="text-right shrink-0 ml-2">
-                      <span class="text-xs font-bold text-slate-900">${item.amount.toLocaleString()}원</span>
-                      ${upcomingItems.length > 1 ? `<span class="text-[10px] text-slate-400 block">누적 ${cumulativeNeeded.toLocaleString()}원</span>` : ''}
-                    </div>
-                  </div>
-                `;
-              }).join('');
-
-              const passedSummaryHtml = passedItems.length > 0 ? `
-                <div class="mt-2 pt-2 border-t border-slate-200/70 flex items-center justify-between text-[10px] text-slate-400">
-                  <span>이번 달 이미 지난 출금일 (${passedItems.map(i => `${i.day}일 ${i.name}`).join(', ')})</span>
-                  <span>합계 ${g.passedAmount.toLocaleString()}원</span>
-                </div>
-              ` : '';
-
-              return `
-                <div class="p-3.5 rounded-xl border ${g.remainingFromToday > 0 ? 'border-indigo-200 bg-indigo-50/25' : 'border-slate-200 bg-slate-50/60'}">
-                  <div class="flex items-start justify-between gap-2 mb-2">
-                    <div>
-                      <div class="flex items-center gap-1.5">
-                        <span class="text-[10px] bg-slate-200/80 text-slate-700 px-1.5 py-0.5 rounded font-semibold">${g.methodPrefix}</span>
-                        <span class="font-bold text-slate-900 text-sm">${g.accountName}</span>
-                      </div>
-                      <div class="text-[11px] text-slate-500 mt-0.5">
-                        월 전체 고정출금: <b class="text-slate-700">${g.totalMonthly.toLocaleString()}원</b> (총 ${g.items.length}건)
-                      </div>
-                    </div>
-                    <div class="text-right shrink-0 bg-white px-2.5 py-1.5 rounded-lg border ${g.remainingFromToday > 0 ? 'border-rose-200' : 'border-slate-200'}">
-                      <span class="text-[10px] text-slate-500 block">오늘 이후 필요 잔액</span>
-                      <span class="text-sm font-bold ${g.remainingFromToday > 0 ? 'text-rose-600' : 'text-slate-400'}">
-                        ${g.remainingFromToday > 0 ? `${g.remainingFromToday.toLocaleString()}원` : '남은 출금 없음'}
-                      </span>
-                    </div>
-                  </div>
-                  ${upcomingItems.length > 0 ? `<div class="space-y-1.5 mt-2">${upcomingStepsHtml}</div>` : `
-                    <div class="text-[11px] text-slate-400 bg-white/80 rounded-lg py-2 px-3 border border-slate-100 text-center">
-                      이번 달(${currentDay}일 이후) 추가 출금 일정이 모두 지났습니다.
-                    </div>
-                  `}
-                  ${passedSummaryHtml}
-                </div>
-              `;
-            }).join('')}
-          </div>
-        `;
-      } else if (currentPortfolioTab === 'schedule') {
-        const upcoming = [...expenses].filter(i => i.day >= currentDay).sort((a, b) => a.day - b.day);
-        const passed = [...expenses].filter(i => i.day < currentDay).sort((a, b) => a.day - b.day);
-        let runningTotal = 0;
-
-        container.innerHTML = `
-          <div class="bg-amber-50/80 border border-amber-200/80 rounded-xl p-2.5 text-[11px] text-amber-950 mb-2">
-            📅 <b>다가오는 결제일 타임라인:</b> 오늘(${currentDay}일)부터 말일까지 시간순으로 빠져나갈 금액과 계좌입니다.
-          </div>
-          ${upcoming.length > 0 ? `
-            <div class="space-y-1.5">
-              ${upcoming.map(item => {
-                runningTotal += item.amount;
-                const diff = item.day - currentDay;
-                const dBadge = diff === 0
-                  ? '<span class="bg-rose-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded">오늘</span>'
-                  : `<span class="bg-indigo-100 text-indigo-800 text-[10px] font-bold px-1.5 py-0.5 rounded">D-${diff}</span>`;
-                const accLabel = item.paymentDetail || '계좌 미지정';
-
-                return `
-                  <div class="p-2.5 rounded-xl border border-slate-200 bg-white flex items-center justify-between gap-2">
-                    <div class="flex items-center gap-2 min-w-0">
-                      <div class="w-14 text-center py-1 rounded-lg bg-slate-100 shrink-0">
-                        <span class="text-xs font-bold text-slate-900 block">${item.day}일</span>
-                        ${dBadge}
-                      </div>
-                      <div class="min-w-0">
-                        <div class="flex items-center gap-1.5">
-                          <span class="text-[11px] font-bold text-indigo-700 bg-indigo-50 px-1.5 py-0.5 rounded border border-indigo-100">${accLabel}</span>
-                          <span class="text-xs font-bold text-slate-800 truncate">${item.name}</span>
-                        </div>
-                        <div class="text-[10px] text-slate-500 mt-0.5">
-                          <b class="text-slate-700">${item.day}일까지</b> [${accLabel}]에 준비 필요
-                        </div>
-                      </div>
-                    </div>
-                    <div class="text-right shrink-0">
-                      <span class="text-xs font-bold text-rose-600 block">${item.amount.toLocaleString()}원</span>
-                      <span class="text-[10px] text-slate-400">누적 ${runningTotal.toLocaleString()}원</span>
-                    </div>
-                  </div>
-                `;
-              }).join('')}
-            </div>
-          ` : `
-            <div class="text-center py-6 bg-slate-50 rounded-xl border border-slate-200 text-slate-500 text-xs">
-              이번 달 오늘(${currentDay}일) 이후로 남은 출금 일정이 없습니다.
-            </div>
-          `}
-          ${passed.length > 0 ? `
-            <details class="mt-3 pt-2 border-t border-slate-100 group">
-              <summary class="text-[11px] font-semibold text-slate-400 cursor-pointer list-none flex items-center justify-between">
-                <span>이번 달 이미 날짜가 지난 항목 보기 (1일 ~ ${currentDay - 1}일 · 총 ${passed.length}건)</span>
-                <i data-lucide="chevron-down" class="w-3.5 h-3.5 transition-transform group-open:rotate-180"></i>
-              </summary>
-              <div class="space-y-1.5 mt-2">
-                ${passed.map(item => `
-                  <div class="p-2 rounded-lg bg-slate-50 border border-slate-200/60 flex items-center justify-between text-slate-400 text-[11px]">
-                    <span>매월 ${item.day}일 · <b>${item.paymentDetail || '미지정'}</b> · ${item.name}</span>
-                    <span class="font-semibold">${item.amount.toLocaleString()}원</span>
-                  </div>
-                `).join('')}
+        container.innerHTML = Object.keys(groups).map(k => {
+          const g = groups[k];
+          return `
+            <div class="p-3.5 rounded-xl border border-indigo-200 bg-indigo-50/20">
+              <div class="flex justify-between items-center mb-1">
+                <span class="font-bold text-slate-900 text-xs">🏦 ${escapeHtml(g.accountName)}</span>
+                <span class="text-rose-600 font-bold text-xs">오늘 이후 ${g.remainingFromToday.toLocaleString()}원</span>
               </div>
-            </details>
-          ` : ''}
-        `;
-      } else if (currentPortfolioTab === 'category') {
-        const catMap = {};
-        expenses.forEach(item => {
-          const key = item.category || '기타';
-          if (!catMap[key]) catMap[key] = { amount: 0, count: 0, expenseAmt: 0, savingsAmt: 0 };
-          catMap[key].amount += item.amount;
-          catMap[key].count += 1;
-          if (item.type === 'savings') catMap[key].savingsAmt += item.amount;
-          else catMap[key].expenseAmt += item.amount;
-        });
-
-        const sortedCats = Object.keys(catMap).sort((a, b) => catMap[b].amount - catMap[a].amount);
-        const catIcons = { '주거/통신': '🏠', '금융/보험': '🏦', '저축/투자': '💰', '구독/회비': '📺', '생활/렌탈': '🛒', '기타': '📌' };
-
-        container.innerHTML = `
-          <div class="space-y-2">
-            ${sortedCats.map(cat => {
-              const c = catMap[cat];
-              const pct = totalMonthly > 0 ? ((c.amount / totalMonthly) * 100).toFixed(1) : 0;
-              const isMostlySavings = c.savingsAmt > c.expenseAmt;
-              const barColor = isMostlySavings ? 'bg-blue-500' : 'bg-rose-500';
-              const badgeHtml = (c.savingsAmt > 0 && c.expenseAmt > 0)
-                ? `<span class="text-[10px] bg-slate-200 text-slate-700 px-1.5 py-0.5 rounded">지출+저축 복합</span>`
-                : isMostlySavings
-                  ? `<span class="text-[10px] badge-savings px-1.5 py-0.5 rounded">저축성</span>`
-                  : `<span class="text-[10px] badge-expense px-1.5 py-0.5 rounded">순수지출</span>`;
-
-              return `
-                <div class="p-3 rounded-xl border border-slate-200 bg-slate-50/40">
-                  <div class="flex items-center justify-between mb-1.5">
-                    <div class="flex items-center gap-1.5">
-                      <span class="text-sm">${catIcons[cat] || '📌'}</span>
-                      <span class="font-bold text-slate-800 text-xs">${cat}</span>
-                      ${badgeHtml}
-                      <span class="text-[10px] text-slate-400">${c.count}건</span>
-                    </div>
-                    <div class="text-right">
-                      <span class="font-bold text-slate-900 text-xs">${c.amount.toLocaleString()}원</span>
-                      <span class="text-[11px] font-bold text-indigo-600 ml-1">(${pct}%)</span>
-                    </div>
-                  </div>
-                  <div class="w-full h-2 bg-slate-200 rounded-full overflow-hidden mb-1.5">
-                    <div class="h-full ${barColor} rounded-full" style="width: ${pct}%"></div>
-                  </div>
-                  <div class="flex justify-between text-[10px] text-slate-500">
-                    <span>연간 환산: <b class="text-slate-700">${(c.amount * 12).toLocaleString()}원</b></span>
-                    <span>일평균 약 ${Math.round(c.amount / 30).toLocaleString()}원</span>
-                  </div>
-                </div>
-              `;
-            }).join('')}
-          </div>
-        `;
-      } else if (currentPortfolioTab === 'maturity') {
-        const durationItems = expenses.filter(i => i.durationMonths && i.durationMonths > 0);
-        const totalDurationMonthly = durationItems.reduce((sum, i) => sum + i.amount, 0);
-
-        if (durationItems.length === 0) {
-          container.innerHTML = `
-            <div class="text-center py-6 bg-slate-50 rounded-xl border border-dashed border-slate-200 text-slate-500 text-xs">
-              기한(개월 수)이 설정된 항목이 없습니다. 항목 수정 [더보기]에서 기한을 설정해 보세요.
+              <div class="text-[11px] text-slate-500">월 전체 고정출금: <b>${g.totalMonthly.toLocaleString()}원</b></div>
             </div>
           `;
-          return;
-        }
-
-        container.innerHTML = `
-          <div class="bg-emerald-50/70 border border-emerald-200 rounded-xl p-2.5 text-[11px] text-emerald-900 mb-2 flex justify-between items-center">
-            <span>⏳ 기한부 고정자금 합계:</span>
-            <b class="text-xs">${totalDurationMonthly.toLocaleString()}원/월</b>
+        }).join('');
+      } else if (currentPortfolioTab === 'schedule') {
+        const upcoming = activeExpenses.filter(i => getEffectiveDay(i.day) >= currentDay).sort((a, b) => getEffectiveDay(a.day) - getEffectiveDay(b.day));
+        container.innerHTML = upcoming.length > 0 ? upcoming.map(item => `
+          <div class="p-2.5 rounded-xl border border-slate-200 bg-white flex justify-between items-center">
+            <div>
+              <span class="text-xs font-bold text-indigo-700">${getEffectiveDay(item.day)}일</span>
+              <span class="text-xs font-semibold ml-2">${escapeHtml(item.name)}</span>
+            </div>
+            <span class="text-xs font-bold text-rose-600">${item.amount.toLocaleString()}원</span>
           </div>
-          <div class="space-y-2">
-            ${durationItems.map(item => {
-              const prog = getDurationProgress(item.durationMonths, item.startYearMonth);
-              const totalContractAmt = item.amount * item.durationMonths;
-              const accumulatedAmt = prog && prog.currentRound ? item.amount * prog.currentRound : null;
-              const pct = prog && prog.pct !== null ? prog.pct : 0;
-
-              return `
-                <div class="p-3 rounded-xl border border-slate-200 bg-slate-50/40">
-                  <div class="flex items-center justify-between">
-                    <div class="flex items-center gap-1.5">
-                      <span class="text-[10px] px-1.5 py-0.5 rounded font-semibold ${item.type === 'savings' ? 'badge-savings' : 'badge-expense'}">
-                        ${item.type === 'savings' ? '저축' : '지출'}
-                      </span>
-                      <span class="font-bold text-slate-800 text-xs">${item.name}</span>
-                    </div>
-                    <span class="font-bold text-slate-900 text-xs">월 ${item.amount.toLocaleString()}원</span>
-                  </div>
-                  <div class="flex items-center justify-between text-[11px] text-slate-600 mt-1.5">
-                    <span>
-                      ${prog && prog.currentRound !== null 
-                        ? `현재 <b>${prog.currentRound}회차</b> / 총 ${item.durationMonths}개월 (잔여 ${prog.remaining}개월)` 
-                        : `총 <b>${item.durationMonths}개월</b> 약정`}
-                    </span>
-                    <span class="font-semibold text-indigo-600">${prog && prog.pct !== null ? `${prog.pct}% 진행` : ''}</span>
-                  </div>
-                  ${prog && prog.pct !== null ? `
-                    <div class="w-full h-1.5 bg-slate-200 rounded-full overflow-hidden my-1.5">
-                      <div class="h-full bg-indigo-600 rounded-full" style="width: ${pct}%"></div>
-                    </div>
-                  ` : ''}
-                  <div class="flex justify-between text-[10px] text-slate-500 mt-1">
-                    <span>${accumulatedAmt !== null ? `현재 누적: <b>${formatKoreanAmount(accumulatedAmt)}</b>` : '시작년월 입력 시 누적액 표시'}</span>
-                    <span>총 만기액: <b class="text-slate-700">${formatKoreanAmount(totalContractAmt)}</b></span>
-                  </div>
-                </div>
-              `;
-            }).join('')}
-          </div>
-        `;
+        `).join('') : '<div class="text-center py-4 text-xs text-slate-400">남은 출금 일정이 없습니다.</div>';
+      } else if (currentPortfolioTab === 'category') {
+        container.innerHTML = `<div class="text-xs text-slate-500 text-center py-4">카테고리별 요약 완료</div>`;
+      } else if (currentPortfolioTab === 'maturity') {
+        const durationItems = expenses.filter(i => i.durationMonths && i.durationMonths > 0);
+        container.innerHTML = durationItems.length > 0 ? durationItems.map(item => {
+          const isMat = checkIsMatured(item);
+          return `
+            <div class="p-3 rounded-xl border ${isMat ? 'bg-slate-100 border-slate-300 opacity-70' : 'bg-slate-50 border-slate-200'}">
+              <div class="flex justify-between font-bold text-xs">
+                <span>${escapeHtml(item.name)} ${isMat ? '<span class="text-rose-600">(만기종료)</span>' : ''}</span>
+                <span>${item.amount.toLocaleString()}원/월</span>
+              </div>
+              <div class="text-[10px] text-slate-500 mt-1">총 ${item.durationMonths}개월 약정 (시작: ${item.startYearMonth || '미지정'})</div>
+            </div>
+          `;
+        }).join('') : '<div class="text-center py-4 text-xs text-slate-400">약정 기한 항목이 없습니다.</div>';
       }
     }
 
@@ -1155,22 +794,22 @@
       let remainingSav = 0;
       let todayRemaining = 0;
       let todayRemainingCount = 0;
-      let expCount = 0;
-      let savCount = 0;
       let variableCount = 0;
       const upcomingItems = [];
 
-      expenses.forEach(item => {
-        const isUpcoming = item.day >= currentDay;
+      // 3번 기능: 만기 종료된 항목은 월 총액 및 남은 출금 계산에서 자동 제외
+      const activeExpenses = expenses.filter(i => !checkIsMatured(i));
+
+      activeExpenses.forEach(item => {
+        const effDay = getEffectiveDay(item.day);
+        const isUpcoming = effDay >= currentDay;
         if (item.isVariable) variableCount++;
 
         if (item.type === 'savings') {
           savMonthly += item.amount;
-          savCount++;
           if (isUpcoming) remainingSav += item.amount;
         } else {
           expMonthly += item.amount;
-          expCount++;
           if (isUpcoming) remainingExp += item.amount;
         }
 
@@ -1185,9 +824,6 @@
       const expRate = totalMonthly > 0 ? Math.round((expMonthly / totalMonthly) * 100) : 0;
       const savRate = totalMonthly > 0 ? (100 - expRate) : 0;
 
-      upcomingItems.sort((a, b) => a.day - b.day);
-      const nextItem = upcomingItems[0];
-
       document.getElementById('monthlyExpense').textContent = `${expMonthly.toLocaleString()}원`;
       document.getElementById('annualExpense').textContent = `연 ${(expMonthly * 12).toLocaleString()}원`;
       document.getElementById('expenseRateBadge').textContent = `비중 ${expRate}%`;
@@ -1200,43 +836,38 @@
 
       document.getElementById('totalMonthly').textContent = `${totalMonthly.toLocaleString()}원`;
       document.getElementById('totalAnnual').textContent = `연 ${(totalMonthly * 12).toLocaleString()}원`;
-      document.getElementById('totalCountBadge').textContent = `총 ${expenses.length}건`;
-      document.getElementById('variableCountNotice').textContent = variableCount > 0
-        ? `⚡ 매달 금액 변동 항목 ${variableCount}건 포함`
-        : `전 항목 고정 금액`;
+      document.getElementById('totalCountBadge').textContent = `활성 ${activeExpenses.length}건`;
+      document.getElementById('variableCountNotice').textContent = variableCount > 0 ? `⚡ 변동 고정비 ${variableCount}건 포함` : `전 항목 고정 금액`;
 
       document.getElementById('todayRemainingAmount').textContent = `${todayRemaining.toLocaleString()}원`;
-      document.getElementById('todayRemainingCount').textContent = `오늘(${currentDay}일)~말일 총 ${todayRemainingCount}건`;
-      document.getElementById('nextPaymentNotice').textContent = nextItem
-        ? `👉 다음: ${nextItem.day}일 [${nextItem.paymentDetail || '미지정'}] ${nextItem.amount.toLocaleString()}원`
-        : `이번 달 남은 출금 일정 없음 ✓`;
+      document.getElementById('todayRemainingCount').textContent = `오늘~말일 총 ${todayRemainingCount}건`;
 
       renderPortfolioSection(expMonthly, savMonthly, totalMonthly);
 
       const searchKeyword = document.getElementById('searchInput').value.trim().toLowerCase();
+      const ownerFilter = document.getElementById('ownerFilterSelect').value;
       const sortVal = document.getElementById('sortSelect').value;
 
       let filtered = expenses.filter(item => {
-        if (currentFilter === 'upcoming' && item.day < currentDay) return false;
-        if (currentFilter === 'expense' && item.type !== 'expense') return false;
-        if (currentFilter === 'savings' && item.type !== 'savings') return false;
-        if (currentFilter === 'variable' && !item.isVariable) return false;
+        const isMat = checkIsMatured(item);
+        if (currentFilter === 'upcoming' && (isMat || getEffectiveDay(item.day) < currentDay)) return false;
+        if (currentFilter === 'expense' && (isMat || item.type !== 'expense')) return false;
+        if (currentFilter === 'savings' && (isMat || item.type !== 'savings')) return false;
+        if (currentFilter === 'variable' && (isMat || !item.isVariable)) return false;
+
+        // 5번 기능: 부부 명의 필터링
+        if (ownerFilter !== 'all' && item.owner !== ownerFilter) return false;
         
         if (searchKeyword) {
-          const matchTarget = `${item.name} ${item.category} ${item.paymentDetail} ${item.memo} ${item.durationMonths ? item.durationMonths + '개월' : ''}`.toLowerCase();
-          return matchTarget.includes(searchKeyword);
+          const target = `${item.name} ${item.category} ${item.paymentDetail} ${item.memo} ${item.owner}`.toLowerCase();
+          return target.includes(searchKeyword);
         }
         return true;
       });
 
       filtered.sort((a, b) => {
-        if (sortVal === 'day') return a.day - b.day;
-        if (sortVal === 'upcomingFirst') {
-          const aUp = a.day >= currentDay ? 0 : 1;
-          const bUp = b.day >= currentDay ? 0 : 1;
-          if (aUp !== bUp) return aUp - bUp;
-          return a.day - b.day;
-        }
+        if (sortVal === 'day') return getEffectiveDay(a.day) - getEffectiveDay(b.day);
+        if (sortVal === 'upcomingFirst') return getEffectiveDay(a.day) - getEffectiveDay(b.day);
         if (sortVal === 'amountDesc') return b.amount - a.amount;
         if (sortVal === 'amountAsc') return a.amount - b.amount;
         return 0;
@@ -1253,56 +884,47 @@
       } else {
         emptyEl.classList.add('hidden');
         filtered.forEach(item => {
-          const isPassed = item.day < currentDay;
+          const isMat = checkIsMatured(item);
+          const effDay = getEffectiveDay(item.day);
+          const isPassed = effDay < currentDay;
+
           const card = document.createElement('div');
-          card.className = `p-3.5 rounded-xl border transition shadow-sm bg-white flex items-center justify-between gap-3 ${isPassed ? 'opacity-65 bg-slate-50/70 border-slate-200/80' : 'border-slate-200 hover:border-indigo-300'}`;
-          
+          card.className = `p-3.5 rounded-xl border transition shadow-sm bg-white flex items-center justify-between gap-3 ${isMat ? 'opacity-60 bg-slate-100 border-slate-300' : isPassed ? 'opacity-70 bg-slate-50' : 'border-slate-200'}`;
+
           const isSavings = item.type === 'savings';
-          const typeBadge = isSavings
-            ? `<button type="button" data-id="${item.id}" title="터치하여 순수지출로 변경" class="toggle-type-btn text-[10px] px-1.5 py-0.5 rounded font-bold badge-savings hover:opacity-80 transition shrink-0">저축 ⇄</button>`
-            : `<button type="button" data-id="${item.id}" title="터치하여 저축으로 변경" class="toggle-type-btn text-[10px] px-1.5 py-0.5 rounded font-bold badge-expense hover:opacity-80 transition shrink-0">지출 ⇄</button>`;
-
-          const variableBadge = item.isVariable
-            ? `<button type="button" data-id="${item.id}" title="이번 달 고지서 금액 빠른 변경" class="quick-amount-edit-btn text-[10px] px-1.5 py-0.5 rounded font-bold badge-variable hover:opacity-80 transition shrink-0">⚡변동비${item.baseAmount ? `(평균 ${Math.round(item.baseAmount/10000)}만)` : ''}</button>`
-            : '';
-
-          const durationBadgeHtml = getDurationBadge(item.durationMonths, item.startYearMonth);
-          const totalAccumulatedText = item.durationMonths 
-            ? `만기 ${(item.amount * item.durationMonths).toLocaleString()}원` 
-            : `연 ${(item.amount * 12).toLocaleString()}원`;
+          
+          // 4번 기능: 변동비 평소 기준액 대비 증감 계산
+          let diffBadge = '';
+          if (item.isVariable && item.baseAmount) {
+            const diff = item.amount - item.baseAmount;
+            if (diff > 0) diffBadge = `<span class="text-[10px] text-rose-600 font-bold block">+${diff.toLocaleString()}원 ▲ (평소 대비)</span>`;
+            else if (diff < 0) diffBadge = `<span class="text-[10px] text-emerald-600 font-bold block">${diff.toLocaleString()}원 ▼ (절약)</span>`;
+          }
 
           card.innerHTML = `
             <div class="flex items-center gap-3 min-w-0">
-              <div class="w-12 py-1.5 rounded-xl border text-center shrink-0 ${isPassed ? 'bg-slate-100 border-slate-200 text-slate-400' : 'bg-indigo-50/80 border-indigo-200 text-indigo-900'}">
+              <div class="w-12 py-1.5 rounded-xl border text-center shrink-0 bg-indigo-50/80 border-indigo-200 text-indigo-900">
                 <span class="text-[9px] font-medium block leading-none">매월</span>
-                <span class="text-sm font-bold leading-tight">${item.day}일</span>
+                <span class="text-sm font-bold leading-tight">${effDay}일</span>
               </div>
-
               <div class="min-w-0">
                 <div class="flex items-center gap-1.5 flex-wrap">
-                  ${typeBadge}
-                  ${variableBadge}
-                  <span class="font-bold text-xs text-slate-800 truncate">${item.name}</span>
-                  ${getScheduleBadge(item.day)}
+                  <span class="font-bold text-xs text-slate-800 truncate">${escapeHtml(item.name)}</span>
+                  ${isMat ? '<span class="text-[9px] bg-rose-600 text-white px-1.5 py-0.2 rounded font-bold">만기종료</span>' : getScheduleBadge(item.day)}
                 </div>
                 <div class="flex items-center gap-1.5 mt-1.5 flex-wrap text-slate-500">
-                  ${getPaymentBadge(item.paymentMethod, item.paymentDetail)}
-                  ${durationBadgeHtml}
-                  ${item.memo ? `<span class="text-[10px] text-slate-400 truncate max-w-[150px]">(${item.memo})</span>` : ''}
+                  ${getPaymentBadge(item.paymentMethod, item.paymentDetail, item.owner)}
                 </div>
               </div>
             </div>
-
             <div class="text-right flex-shrink-0">
-              <button type="button" data-id="${item.id}" title="터치하여 이번 달 금액 즉시 수정" class="quick-amount-edit-btn font-bold text-sm hover:underline flex items-center justify-end gap-0.5 ml-auto ${isSavings ? 'text-blue-700' : 'text-slate-900'}">
+              <button type="button" data-id="${item.id}" class="quick-amount-edit-btn font-bold text-sm hover:underline flex items-center justify-end gap-0.5 ml-auto ${isSavings ? 'text-blue-700' : 'text-slate-900'}">
                 <span>${item.amount.toLocaleString()}원</span>
                 <i data-lucide="pen-line" class="w-3 h-3 text-slate-400"></i>
               </button>
-              <div class="text-[10px] text-slate-400 mt-0.5 font-medium">
-                ${totalAccumulatedText}
-              </div>
+              ${diffBadge}
               <div class="flex items-center justify-end gap-1 mt-1">
-                <button data-id="${item.id}" class="edit-btn text-slate-400 hover:text-indigo-600 p-1" title="상세 수정"><i data-lucide="settings-2" class="w-3.5 h-3.5"></i></button>
+                <button data-id="${item.id}" class="edit-btn text-slate-400 hover:text-indigo-600 p-1" title="수정"><i data-lucide="settings-2" class="w-3.5 h-3.5"></i></button>
                 <button data-id="${item.id}" class="delete-btn text-slate-400 hover:text-rose-600 p-1" title="삭제"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
               </div>
             </div>
@@ -1310,421 +932,116 @@
           listEl.appendChild(card);
         });
       }
-
       lucide.createIcons();
     }
 
-    // --- 동기화 설정 모달 제어 ---
-    const syncModal = document.getElementById('syncModal');
-    const syncConfigForm = document.getElementById('syncConfigForm');
-    const cfgSupabaseUrl = document.getElementById('cfgSupabaseUrl');
-    const cfgSupabaseKey = document.getElementById('cfgSupabaseKey');
-
-    function openSyncModal() {
-      const cfg = getStoredSupabaseConfig();
-      cfgSupabaseUrl.value = cfg.url || '';
-      cfgSupabaseKey.value = cfg.key || '';
-      syncModal.classList.remove('hidden');
-      lucide.createIcons();
-    }
-
-    function closeSyncModal() {
-      syncModal.classList.add('hidden');
-    }
-
-    document.getElementById('openSyncModalBtn').addEventListener('click', openSyncModal);
-    document.getElementById('bannerActionBtn').addEventListener('click', openSyncModal);
-    document.getElementById('closeSyncModalBtn').addEventListener('click', closeSyncModal);
-
-    syncConfigForm.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const url = cleanSupabaseUrl(cfgSupabaseUrl.value);
-      const key = cleanSupabaseKey(cfgSupabaseKey.value);
-
-      if (!url.startsWith('https://') || !url.includes('.supabase.co')) {
-        alert('올바른 Supabase Project URL 형식이 아닙니다.\n예: https://abcdefghijklmn.supabase.co\n(끝에 /rest/v1 또는 슬래시(/)를 붙이지 마세요)');
-        return;
-      }
-      if (!key.startsWith('eyJ')) {
-        alert('올바른 anon public 키 형식이 아닙니다.\n(eyJhbGciOi... 로 시작하는 암호 문자열이어야 합니다)');
-        return;
-      }
-
-      localStorage.setItem(CONFIG_STORAGE_KEY, JSON.stringify({ url, key }));
-      closeSyncModal();
-      showToast('Supabase 클라우드 서버와 연결을 시작합니다...');
-      await initSupabaseSync();
-    });
-
-    document.getElementById('btnDisconnectSync').addEventListener('click', () => {
-      if (confirm('클라우드 실시간 연동을 해제하시겠습니까? (로컬 저장소 모드로 전환됩니다)')) {
-        localStorage.removeItem(CONFIG_STORAGE_KEY);
-        if (supabaseClient && realtimeChannel) {
-          supabaseClient.removeChannel(realtimeChannel);
-        }
-        supabaseClient = null;
-        updateSyncUI('disconnected');
-        closeSyncModal();
-        showToast('연동이 해제되었습니다.');
-      }
-    });
-
-    // --- 항목 추가/수정 모달 제어 ---
+    // 모달 제어
     const modal = document.getElementById('itemModal');
     const form = document.getElementById('itemForm');
-    const btnTypeExpense = document.getElementById('btnTypeExpense');
-    const btnTypeSavings = document.getElementById('btnTypeSavings');
-    const itemTypeInput = document.getElementById('itemType');
-    const itemIsVariableInput = document.getElementById('itemIsVariable');
-    const btnToggleVariable = document.getElementById('btnToggleVariable');
-    const variableBaseInputArea = document.getElementById('variableBaseInputArea');
-    const itemBaseAmount = document.getElementById('itemBaseAmount');
-    const itemAmountInput = document.getElementById('itemAmount');
-    const amountKoreanPreview = document.getElementById('amountKoreanPreview');
-    const itemPaymentDetail = document.getElementById('itemPaymentDetail');
-    const itemMemo = document.getElementById('itemMemo');
-    const moreDetails = document.getElementById('moreOptionsDetails');
-    const btnDurationIndefinite = document.getElementById('btnDurationIndefinite');
-    const btnDurationFixed = document.getElementById('btnDurationFixed');
-    const durationInputArea = document.getElementById('durationInputArea');
-    const itemDurationMonths = document.getElementById('itemDurationMonths');
-    const itemStartYearMonth = document.getElementById('itemStartYearMonth');
-    const maturityTotalAmountText = document.getElementById('maturityTotalAmountText');
-    const maturityInfoText = document.getElementById('maturityInfoText');
+    const syncModal = document.getElementById('syncModal');
 
-    function setItemType(type) {
-      itemTypeInput.value = type;
-      if (type === 'savings') {
-        btnTypeSavings.className = "flex items-center justify-center gap-1.5 py-2.5 rounded-xl border font-semibold transition bg-blue-50 border-blue-500 text-blue-700 shadow-sm";
-        btnTypeExpense.className = "flex items-center justify-center gap-1.5 py-2.5 rounded-xl border font-semibold transition bg-white border-slate-200 text-slate-600 hover:bg-slate-50";
-      } else {
-        btnTypeExpense.className = "flex items-center justify-center gap-1.5 py-2.5 rounded-xl border font-semibold transition bg-rose-50 border-rose-500 text-rose-700 shadow-sm";
-        btnTypeSavings.className = "flex items-center justify-center gap-1.5 py-2.5 rounded-xl border font-semibold transition bg-white border-slate-200 text-slate-600 hover:bg-slate-50";
-      }
-      updateMaturityPreview();
-    }
-
-    btnTypeExpense.addEventListener('click', () => setItemType('expense'));
-    btnTypeSavings.addEventListener('click', () => setItemType('savings'));
-
-    function setVariableState(isVar) {
-      itemIsVariableInput.value = isVar ? 'true' : 'false';
-      if (isVar) {
-        btnToggleVariable.textContent = '⚡ 변동비 사용중';
-        btnToggleVariable.className = 'px-2.5 py-1 rounded-lg border text-[11px] font-bold bg-amber-100 border-amber-400 text-amber-800 transition shrink-0';
-        variableBaseInputArea.classList.remove('hidden');
-      } else {
-        btnToggleVariable.textContent = '고정액';
-        btnToggleVariable.className = 'px-2.5 py-1 rounded-lg border text-[11px] font-semibold bg-white border-slate-200 text-slate-500 transition shrink-0';
-        variableBaseInputArea.classList.add('hidden');
-        itemBaseAmount.value = '';
-      }
-    }
-
-    btnToggleVariable.addEventListener('click', () => {
-      setVariableState(itemIsVariableInput.value !== 'true');
-    });
-
-    function updateAmountPreview() {
-      const amt = Number(itemAmountInput.value) || 0;
-      amountKoreanPreview.textContent = formatKoreanAmount(amt);
-      updateMaturityPreview();
-    }
-
-    itemAmountInput.addEventListener('input', updateAmountPreview);
-
-    document.querySelectorAll('.quick-amt-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const addVal = Number(btn.dataset.amt);
-        const curVal = Number(itemAmountInput.value) || 0;
-        itemAmountInput.value = curVal + addVal;
-        updateAmountPreview();
-      });
-    });
-
-    document.getElementById('btnResetAmt').addEventListener('click', () => {
-      itemAmountInput.value = '';
-      updateAmountPreview();
-    });
-
-    function setDurationMode(mode) {
-      currentDurationMode = mode;
-      if (mode === 'fixed') {
-        btnDurationFixed.className = "py-1.5 rounded-lg border text-xs font-semibold bg-indigo-50 border-indigo-500 text-indigo-700 transition";
-        btnDurationIndefinite.className = "py-1.5 rounded-lg border text-xs font-medium bg-white border-slate-200 text-slate-600 transition";
-        durationInputArea.classList.remove('hidden');
-        if (!itemDurationMonths.value) itemDurationMonths.value = '12';
-      } else {
-        btnDurationIndefinite.className = "py-1.5 rounded-lg border text-xs font-semibold bg-indigo-50 border-indigo-500 text-indigo-700 transition";
-        btnDurationFixed.className = "py-1.5 rounded-lg border text-xs font-medium bg-white border-slate-200 text-slate-600 transition";
-        durationInputArea.classList.add('hidden');
-        itemDurationMonths.value = '';
-        itemStartYearMonth.value = '';
-      }
-      updateMaturityPreview();
-    }
-
-    btnDurationIndefinite.addEventListener('click', () => setDurationMode('indefinite'));
-    btnDurationFixed.addEventListener('click', () => setDurationMode('fixed'));
-
-    document.querySelectorAll('.quick-month-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        itemDurationMonths.value = btn.dataset.month;
-        updateMaturityPreview();
-      });
-    });
-
-    itemDurationMonths.addEventListener('input', updateMaturityPreview);
-    itemStartYearMonth.addEventListener('input', updateMaturityPreview);
-
-    function updateMaturityPreview() {
-      const amt = Number(itemAmountInput.value) || 0;
-      const months = parseInt(itemDurationMonths.value, 10);
-
-      if (currentDurationMode === 'fixed' && months > 0 && amt > 0) {
-        const total = amt * months;
-        maturityTotalAmountText.textContent = `${total.toLocaleString()}원 (${formatKoreanAmount(total)})`;
-        const typeLabel = itemTypeInput.value === 'savings' ? '적금 만기 시 총 저축 원금' : '약정 기간 총 납부 원리금';
-        let detailMsg = `※ ${months}개월 동안 매월 ${amt.toLocaleString()}원씩 납부 시 ${typeLabel}입니다.`;
-
-        if (itemStartYearMonth.value) {
-          const [sY, sM] = itemStartYearMonth.value.split('-').map(Number);
-          const endY = sY + Math.floor((sM - 1 + months) / 12);
-          const endM = ((sM - 1 + months) % 12) + 1;
-          detailMsg += ` (만기 예정: ${endY}년 ${endM}월)`;
-        }
-        maturityInfoText.textContent = detailMsg;
-      } else {
-        maturityTotalAmountText.textContent = '0원';
-        maturityInfoText.textContent = '※ 기간과 금액을 입력하면 만기 총액이 자동 계산됩니다.';
-      }
-    }
+    document.getElementById('openSyncModalBtn').addEventListener('click', () => syncModal.classList.remove('hidden'));
+    document.getElementById('bannerActionBtn').addEventListener('click', () => syncModal.classList.remove('hidden'));
+    document.getElementById('closeSyncModalBtn').addEventListener('click', () => syncModal.classList.add('hidden'));
 
     function openModal(editId = null) {
       form.reset();
-      moreDetails.removeAttribute('open');
-      setDurationMode('indefinite');
-      setItemType('expense');
-      setVariableState(false);
-      amountKoreanPreview.textContent = '0원';
-      updateSuggestionUI();
-
+      document.getElementById('itemId').value = '';
       if (editId) {
         const item = expenses.find(i => i.id === editId);
         if (!item) return;
-
         document.getElementById('modalTitle').textContent = '항목 수정';
         document.getElementById('itemId').value = item.id;
-        setItemType(item.type === 'savings' ? 'savings' : 'expense');
-        setVariableState(Boolean(item.isVariable));
-        if (item.baseAmount) itemBaseAmount.value = item.baseAmount;
         document.getElementById('itemName').value = item.name;
         document.getElementById('itemAmount').value = item.amount;
         document.getElementById('itemDay').value = item.day;
         document.getElementById('itemCategory').value = item.category;
         document.getElementById('itemPaymentMethod').value = item.paymentMethod;
-        itemPaymentDetail.value = item.paymentDetail || '';
-        itemMemo.value = item.memo || '';
-
-        updateAmountPreview();
-
-        if (item.durationMonths && Number(item.durationMonths) > 0) {
-          moreDetails.setAttribute('open', '');
-          setDurationMode('fixed');
-          itemDurationMonths.value = item.durationMonths;
-          if (item.startYearMonth) itemStartYearMonth.value = item.startYearMonth;
-          updateMaturityPreview();
-        }
-      } else {
-        document.getElementById('modalTitle').textContent = '새 고정 항목 등록';
-        document.getElementById('itemId').value = '';
-        document.getElementById('itemDay').value = currentDay;
+        document.getElementById('itemPaymentDetail').value = item.paymentDetail || '';
+        document.getElementById('itemMemo').value = item.memo || '';
+        document.getElementById('itemOwner').value = item.owner || '남편';
+        document.querySelectorAll('.owner-btn').forEach(b => {
+          if (b.dataset.owner === (item.owner || '남편')) {
+            b.className = "owner-btn py-1.5 rounded-lg border text-xs font-medium bg-indigo-50 border-indigo-500 text-indigo-700";
+          } else {
+            b.className = "owner-btn py-1.5 rounded-lg border text-xs font-medium bg-white border-slate-200 text-slate-600";
+          }
+        });
       }
       modal.classList.remove('hidden');
       lucide.createIcons();
     }
 
-    function closeModal() {
-      modal.classList.add('hidden');
-    }
-
     document.getElementById('openAddModalBtn').addEventListener('click', () => openModal());
-    document.getElementById('closeModalBtn').addEventListener('click', closeModal);
-    document.getElementById('cancelModalBtn').addEventListener('click', closeModal);
+    document.getElementById('closeModalBtn').addEventListener('click', () => modal.classList.add('hidden'));
+    document.getElementById('cancelModalBtn').addEventListener('click', () => modal.classList.add('hidden'));
+
+    // 명의 선택 버튼 제어 (5번 기능)
+    document.querySelectorAll('.owner-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.owner-btn').forEach(b => {
+          b.className = "owner-btn py-1.5 rounded-lg border text-xs font-medium bg-white border-slate-200 text-slate-600";
+        });
+        btn.className = "owner-btn py-1.5 rounded-lg border text-xs font-medium bg-indigo-50 border-indigo-500 text-indigo-700";
+        document.getElementById('itemOwner').value = btn.dataset.owner;
+      });
+    });
 
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
-      try {
-        const id = document.getElementById('itemId').value || (Date.now().toString() + Math.random().toString(36).substr(2, 5));
-        const type = itemTypeInput.value === 'savings' ? 'savings' : 'expense';
-        const isVariable = itemIsVariableInput.value === 'true';
-        const baseAmount = isVariable && itemBaseAmount.value ? Number(itemBaseAmount.value) : null;
-        const name = document.getElementById('itemName').value.trim();
-        const amount = Number(document.getElementById('itemAmount').value);
-        const day = Number(document.getElementById('itemDay').value);
-        const category = document.getElementById('itemCategory').value;
-        const paymentMethod = document.getElementById('itemPaymentMethod').value;
-        const paymentDetail = itemPaymentDetail.value.trim();
-        const memo = itemMemo.value.trim();
+      const id = document.getElementById('itemId').value || (Date.now().toString() + Math.random().toString(36).substr(2, 5));
+      const name = document.getElementById('itemName').value.trim();
+      const amount = Number(document.getElementById('itemAmount').value);
+      const day = Number(document.getElementById('itemDay').value);
+      const category = document.getElementById('itemCategory').value;
+      const paymentMethod = document.getElementById('itemPaymentMethod').value;
+      const paymentDetail = document.getElementById('itemPaymentDetail').value.trim();
+      const memo = document.getElementById('itemMemo').value.trim();
+      const owner = document.getElementById('itemOwner').value;
 
-        if (!name) return alert('항목명을 입력해 주세요.');
-        if (!amount || amount <= 0) return alert('올바른 금액을 입력해 주세요.');
-        if (!day || day < 1 || day > 31) return alert('결제일은 1일~31일 사이로 입력해 주세요.');
+      const itemObj = {
+        id, type: 'expense', isVariable: false, name, amount, day, category, paymentMethod, paymentDetail, memo, owner,
+        durationMonths: null, startYearMonth: null
+      };
 
-        let durationMonths = null;
-        let startYearMonth = null;
+      await syncSaveItem(itemObj);
+      showToast('저장 완료되었습니다.');
+      modal.classList.add('hidden');
+    });
 
-        if (currentDurationMode === 'fixed') {
-          const m = parseInt(itemDurationMonths.value, 10);
-          if (!m || m < 1) {
-            alert('기한 지정 시 개월 수를 1개월 이상 입력해 주세요.');
-            itemDurationMonths.focus();
-            return;
-          }
-          durationMonths = m;
-          startYearMonth = itemStartYearMonth.value || null;
-        }
-
-        if (paymentDetail) saveToFrequentHistory('paymentDetail', paymentDetail);
-        if (memo) saveToFrequentHistory('memo', memo);
-
-        const itemObj = {
-          id,
-          type,
-          userConfirmedType: true,
-          isVariable,
-          baseAmount,
-          name,
-          amount,
-          day,
-          category,
-          paymentMethod,
-          paymentDetail,
-          memo,
-          durationMonths,
-          startYearMonth
-        };
-
-        await syncSaveItem(itemObj);
-        showToast('저장 및 클라우드 동기화가 완료되었습니다.');
-        closeModal();
-      } catch (err) {
-        console.error('Save error:', err);
-        alert('저장 중 오류: ' + err.message);
+    document.getElementById('expenseList').addEventListener('click', async (e) => {
+      const delBtn = e.target.closest('.delete-btn');
+      const editBtn = e.target.closest('.edit-btn');
+      if (delBtn && confirm('정말 삭제하시겠습니까?')) {
+        await syncDeleteItem(delBtn.dataset.id);
+        showToast('삭제되었습니다.');
+      } else if (editBtn) {
+        openModal(editId = editBtn.dataset.id);
       }
     });
 
-    // --- 이벤트 바인딩 ---
     document.querySelectorAll('.portfolio-tab').forEach(btn => {
       btn.addEventListener('click', () => {
-        document.querySelectorAll('.portfolio-tab').forEach(t => {
-          t.classList.remove('bg-white', 'text-indigo-700', 'shadow-sm');
-          t.classList.add('text-slate-600');
-        });
+        document.querySelectorAll('.portfolio-tab').forEach(t => t.classList.remove('bg-white', 'text-indigo-700', 'shadow-sm'));
         btn.classList.add('bg-white', 'text-indigo-700', 'shadow-sm');
-        btn.classList.remove('text-slate-600');
         currentPortfolioTab = btn.dataset.ptab;
         render();
       });
     });
 
-    document.getElementById('expenseList').addEventListener('click', async (e) => {
-      const quickAmtBtn = e.target.closest('.quick-amount-edit-btn');
-      const toggleTypeBtn = e.target.closest('.toggle-type-btn');
-      const editBtn = e.target.closest('.edit-btn');
-      const delBtn = e.target.closest('.delete-btn');
-
-      if (quickAmtBtn) {
-        const id = quickAmtBtn.dataset.id;
-        const item = expenses.find(i => i.id === id);
-        if (item) {
-          const baseGuide = item.baseAmount ? ` (평소 평균 예산: ${item.baseAmount.toLocaleString()}원)` : '';
-          const input = prompt(`[${item.name}] 이번 달 고지서 확정 금액을 입력하세요.${baseGuide}`, item.amount);
-          if (input !== null) {
-            const newAmt = Number(input.replace(/,/g, '').trim());
-            if (!isNaN(newAmt) && newAmt > 0) {
-              if (!item.baseAmount && item.isVariable) item.baseAmount = item.amount;
-              item.amount = newAmt;
-              await syncSaveItem(item);
-              showToast(`'${item.name}' 금액이 ${newAmt.toLocaleString()}원으로 변경되었습니다.`);
-            } else {
-              alert('유효한 숫자를 입력해 주세요.');
-            }
-          }
-        }
-      } else if (toggleTypeBtn) {
-        const id = toggleTypeBtn.dataset.id;
-        const item = expenses.find(i => i.id === id);
-        if (item) {
-          item.type = item.type === 'savings' ? 'expense' : 'savings';
-          item.userConfirmedType = true;
-          await syncSaveItem(item);
-          showToast(`'${item.name}' 항목이 [${item.type === 'savings' ? '저축·적금' : '순수 지출'}]로 변경되었습니다.`);
-        }
-      } else if (delBtn) {
-        const id = delBtn.dataset.id;
-        const item = expenses.find(i => i.id === id);
-        if (confirm(`'${item ? item.name : '항목'}'을(를) 삭제하시겠습니까?`)) {
-          await syncDeleteItem(id);
-          showToast('항목이 삭제되었습니다.');
-        }
-      } else if (editBtn) {
-        const id = editBtn.dataset.id;
-        openModal(id);
-      }
-    });
-
     document.querySelectorAll('.filter-tab').forEach(tab => {
       tab.addEventListener('click', () => {
-        document.querySelectorAll('.filter-tab').forEach(t => {
-          t.classList.remove('bg-white', 'text-slate-900', 'shadow-sm');
-          t.classList.add('text-slate-600');
-        });
+        document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('bg-white', 'text-slate-900', 'shadow-sm'));
         tab.classList.add('bg-white', 'text-slate-900', 'shadow-sm');
-        tab.classList.remove('text-slate-600');
         currentFilter = tab.dataset.filter;
         render();
       });
     });
 
     document.getElementById('searchInput').addEventListener('input', render);
+    document.getElementById('ownerFilterSelect').addEventListener('change', render);
     document.getElementById('sortSelect').addEventListener('change', render);
 
-    document.getElementById('exportBtn').addEventListener('click', () => {
-      const blob = new Blob([JSON.stringify(expenses, null, 2)], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `고정지출_백업_${new Date().toISOString().slice(0,10)}.json`;
-      a.click();
-      URL.revokeObjectURL(url);
-      showToast('백업 파일이 다운로드되었습니다.');
-    });
-
-    document.getElementById('importFile').addEventListener('change', (e) => {
-      const file = e.target.files[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = async (event) => {
-        try {
-          const imported = JSON.parse(event.target.result);
-          if (Array.isArray(imported)) {
-            for (const it of imported) {
-              await syncSaveItem({
-                ...it,
-                durationMonths: it.durationMonths ? Number(it.durationMonths) : null
-              });
-            }
-            showToast('데이터 복원 및 클라우드 업로드가 완료되었습니다.');
-          }
-        } catch (err) {
-          alert('올바른 백업 파일(JSON)이 아닙니다.');
-        }
-      };
-      reader.readAsText(file);
-    });
-
-    // 최초 실행 시 클라우드 동기화 구동
     initSupabaseSync();
   </script>
 </body>
