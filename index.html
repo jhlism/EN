@@ -12,11 +12,11 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
   <!-- ========================================================================= -->
-  <!-- ⭐ [초간편 설정] 17, 18번째 줄의 작은따옴표('') 사이에 키를 넣어주세요! ⭐ -->
+  <!-- ⭐ [초간편 설정] 전달해주신 Supabase 프로젝트 URL 및 API Key 기본 반영 완료 ⭐ -->
   <!-- ========================================================================= -->
   <script>
-    window.DEFAULT_SUPABASE_URL = 'https://zcirreplmjqplnbqpwwz.supabase.co'; // 👈 [17행] Project URL (예: 'https://xxxxxx.supabase.co')
-    window.DEFAULT_SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpjaXJyZXBsbWpxcGxuYnFwd3d6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI3MzUzNTgsImV4cCI6MjEwODMxMTM1OH0.fhP0eb5b728k9ERO1rCl-V2pLeveN47yN75oc-YeqIU'; // 👈 [18행] anon public 키 (예: 'eyJhbGciOiJIUzI1NiIsInR5cCI6...')
+    window.DEFAULT_SUPABASE_URL = 'https://zcirreplmjqplnbqpwwz.supabase.co';
+    window.DEFAULT_SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpjaXJyZXBsbWpxcGxuYnFwd3d6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI3MzUzNTgsImV4cCI6MjEwODMxMTM1OH0.fhP0eb5b728k9ERO1rCl-V2pLeveN47yN75oc-YeqIU';
   </script>
   <!-- ========================================================================= -->
 
@@ -55,10 +55,10 @@
           <span id="headerSyncDot" class="w-2 h-2 rounded-full bg-amber-400"></span>
           <span id="headerSyncText">클라우드 연동</span>
         </button>
-        <button id="exportBtn" title="데이터 백업" class="p-1.5 bg-white border border-slate-200 text-slate-600 hover:bg-slate-100 rounded-lg shadow-sm">
+        <button id="exportBtn" title="데이터 백업(JSON)" class="p-1.5 bg-white border border-slate-200 text-slate-600 hover:bg-slate-100 rounded-lg shadow-sm">
           <i data-lucide="download" class="w-4 h-4"></i>
         </button>
-        <label for="importFile" title="데이터 복원" class="p-1.5 bg-white border border-slate-200 text-slate-600 hover:bg-slate-100 rounded-lg shadow-sm cursor-pointer">
+        <label for="importFile" title="데이터 복원(JSON)" class="p-1.5 bg-white border border-slate-200 text-slate-600 hover:bg-slate-100 rounded-lg shadow-sm cursor-pointer">
           <i data-lucide="upload" class="w-4 h-4"></i>
         </label>
         <input type="file" id="importFile" class="hidden" accept=".json" />
@@ -217,7 +217,7 @@
           <i data-lucide="search" class="w-3.5 h-3.5 absolute left-2.5 top-2.5 text-slate-400"></i>
           <input type="text" id="searchInput" placeholder="항목명, 계좌명, 카드, 메모 검색" class="w-full pl-8 pr-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none" />
         </div>
-        <!-- 5번 기능: 부부 담당자 명의 필터 -->
+        <!-- 부부 담당자 명의 필터 -->
         <select id="ownerFilterSelect" class="bg-white border border-slate-200 rounded-lg px-2 py-1.5 text-xs text-slate-700 focus:outline-none">
           <option value="all">👤 명의: 전체</option>
           <option value="남편">남편</option>
@@ -261,7 +261,7 @@
         </button>
       </div>
       <p class="text-xs text-slate-600 mb-3 leading-relaxed">
-        Supabase에서 복사한 <b>Project URL</b>과 <b>anon public 키</b>를 입력하시면 아내분 폰과 실시간 연동됩니다.
+        Supabase에서 복사한 <b>Project URL</b>과 <b>anon public 키</b>를 입력하시면 아내분 폰과 실시간 연동됩니다. (현재 코드에 기본 키가 내장되어 있습니다.)
       </p>
       <form id="syncConfigForm" class="space-y-3 text-xs">
         <div>
@@ -273,7 +273,7 @@
           <textarea id="cfgSupabaseKey" required rows="3" placeholder="eyJhbGciOiJIUzI1Ni..." class="w-full px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none font-mono text-[11px]"></textarea>
         </div>
         <div class="flex gap-2 pt-1">
-          <button type="button" id="btnDisconnectSync" class="py-2.5 px-3 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-xl font-medium transition">연동 해제</button>
+          <button type="button" id="btnDisconnectSync" class="py-2.5 px-3 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-xl font-medium transition">초기화/해제</button>
           <button type="submit" class="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-semibold shadow-sm transition">연동 및 저장</button>
         </div>
       </form>
@@ -308,7 +308,7 @@
           </div>
         </div>
 
-        <!-- 5번 기능: 담당 명의 선택 -->
+        <!-- 담당 명의 선택 -->
         <div>
           <label class="block font-semibold text-slate-700 mb-1">담당 명의 (부부 필터용) *</label>
           <div class="grid grid-cols-3 gap-1.5">
@@ -340,21 +340,22 @@
           </div>
         </div>
 
+        <!-- 금액 한글 미리보기 & 퀵 버튼 -->
         <div class="bg-slate-50 p-2.5 rounded-lg border border-slate-100">
           <div class="flex items-center justify-between text-[11px] mb-1.5">
             <span class="text-slate-500">금액 미리보기:</span>
             <span id="amountKoreanPreview" class="font-bold text-indigo-600">0원</span>
           </div>
           <div class="flex flex-wrap gap-1">
-            <button type="button" class="quick-amt-btn px-2 py-0.5 bg-white border border-slate-200 rounded text-[10px] text-slate-600" data-amt="10000">+1만</button>
-            <button type="button" class="quick-amt-btn px-2 py-0.5 bg-white border border-slate-200 rounded text-[10px] text-slate-600" data-amt="50000">+5만</button>
-            <button type="button" class="quick-amt-btn px-2 py-0.5 bg-white border border-slate-200 rounded text-[10px] text-slate-600" data-amt="100000">+10만</button>
-            <button type="button" class="quick-amt-btn px-2 py-0.5 bg-white border border-slate-200 rounded text-[10px] text-slate-600" data-amt="500000">+50만</button>
-            <button type="button" id="btnResetAmt" class="px-2 py-0.5 bg-slate-200 rounded text-[10px] text-slate-600">정정</button>
+            <button type="button" class="quick-amt-btn px-2 py-1 bg-white hover:bg-indigo-50 active:scale-95 border border-slate-200 rounded text-[10px] font-medium text-slate-700 transition" data-amt="10000">+1만</button>
+            <button type="button" class="quick-amt-btn px-2 py-1 bg-white hover:bg-indigo-50 active:scale-95 border border-slate-200 rounded text-[10px] font-medium text-slate-700 transition" data-amt="50000">+5만</button>
+            <button type="button" class="quick-amt-btn px-2 py-1 bg-white hover:bg-indigo-50 active:scale-95 border border-slate-200 rounded text-[10px] font-medium text-slate-700 transition" data-amt="100000">+10만</button>
+            <button type="button" class="quick-amt-btn px-2 py-1 bg-white hover:bg-indigo-50 active:scale-95 border border-slate-200 rounded text-[10px] font-medium text-slate-700 transition" data-amt="500000">+50만</button>
+            <button type="button" id="btnResetAmt" class="px-2 py-1 bg-slate-200 hover:bg-slate-300 active:scale-95 rounded text-[10px] font-medium text-slate-700 transition ml-auto">정정(0원)</button>
           </div>
         </div>
 
-        <!-- 변동 고정비 설정 토글 (4번 기능 연계) -->
+        <!-- 변동 고정비 설정 토글 -->
         <div class="p-2.5 rounded-xl border border-amber-200/80 bg-amber-50/40">
           <div class="flex items-center justify-between">
             <div>
@@ -371,23 +372,35 @@
           </div>
         </div>
 
-        <!-- 결제 수단 & 출금 계좌 상세 -->
-        <div class="grid grid-cols-5 gap-2">
-          <div class="col-span-2">
-            <label class="block font-semibold text-slate-700 mb-1">결제 수단 *</label>
-            <select id="itemPaymentMethod" class="w-full px-2.5 py-2 border border-slate-200 rounded-lg bg-white text-xs">
-              <option value="account">🏦 계좌이체</option>
-              <option value="credit">💳 신용카드</option>
-              <option value="check">💳 체크카드</option>
-              <option value="direct">💸 직접송금</option>
-            </select>
+        <!-- 결제 수단 & 출금 계좌 상세 + 상위 3개 원터치 선택 칩 -->
+        <div class="space-y-1.5">
+          <div class="grid grid-cols-5 gap-2">
+            <div class="col-span-2">
+              <label class="block font-semibold text-slate-700 mb-1">결제 수단 *</label>
+              <select id="itemPaymentMethod" class="w-full px-2.5 py-2 border border-slate-200 rounded-lg bg-white text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                <option value="account">🏦 계좌이체</option>
+                <option value="credit">💳 신용카드</option>
+                <option value="check">💳 체크카드</option>
+                <option value="direct">💸 직접송금</option>
+              </select>
+            </div>
+            <div class="col-span-3">
+              <label class="font-semibold text-slate-700 block mb-1">출금 계좌 / 카드명 *</label>
+              <input type="text" id="itemPaymentDetail" list="paymentDetailDataList" required autocomplete="off" placeholder="예: 우리꿈, 국민은행" class="w-full px-3 py-2 border border-slate-200 rounded-lg text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none" />
+            </div>
           </div>
-          <div class="col-span-3">
-            <label class="font-semibold text-slate-700 block mb-1">출금 계좌 / 카드명 *</label>
-            <input type="text" id="itemPaymentDetail" list="paymentDetailDataList" autocomplete="off" placeholder="예: 우리꿈, 국민은행" class="w-full px-3 py-2 border border-slate-200 rounded-lg text-xs" />
+          <datalist id="paymentDetailDataList"></datalist>
+
+          <!-- 결제수단별 자주 쓰는 상위 3개 계좌/카드 원터치 선택 영역 -->
+          <div id="frequentPaymentContainer" class="bg-indigo-50/50 border border-indigo-100 rounded-lg px-2.5 py-2">
+            <div class="flex items-center justify-between mb-1">
+              <span id="frequentPaymentLabel" class="text-[10px] font-semibold text-indigo-700 flex items-center gap-1">
+                <i data-lucide="zap" class="w-3 h-3"></i> 자주 쓰는 계좌/카드 (터치하여 바로 선택)
+              </span>
+            </div>
+            <div id="frequentPaymentChips" class="flex flex-wrap items-center gap-1.5"></div>
           </div>
         </div>
-        <datalist id="paymentDetailDataList"></datalist>
 
         <!-- 카테고리 -->
         <div>
@@ -408,7 +421,7 @@
           <input type="text" id="itemMemo" placeholder="예: 전기·수도 포함" class="w-full px-3 py-2 border border-slate-200 rounded-lg text-xs" />
         </div>
 
-        <!-- 3번 기능 연계: 약정 만기 설정 -->
+        <!-- 약정 만기 설정 -->
         <details id="moreOptionsDetails" class="group border border-slate-200/90 rounded-xl p-3 bg-slate-50/70">
           <summary class="flex justify-between items-center cursor-pointer list-none text-xs font-semibold text-slate-700 select-none">
             <span class="flex items-center gap-1.5">
@@ -456,6 +469,7 @@
     let currentFilter = 'all';
     let currentPortfolioTab = 'account';
     let currentDurationMode = 'indefinite';
+    let inlineEditingId = null;
 
     const today = new Date();
     const currentYear = today.getFullYear();
@@ -501,13 +515,31 @@
       return String(str).replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]));
     }
 
-    // --- 3번 기능 연계: 만기 종료 여부 판별 함수 ---
+    // 만기 종료 여부 판별 함수
     function checkIsMatured(item) {
       if (!item.durationMonths || !item.startYearMonth) return false;
       const [sYear, sMonth] = item.startYearMonth.split('-').map(Number);
+      if (!sYear || !sMonth) return false;
       const elapsedMonths = (currentYear - sYear) * 12 + (currentMonth - sMonth);
-      // 이미 약정 개월 수 이상 경과했으면 만기 종료
       return elapsedMonths >= item.durationMonths;
+    }
+
+    // 만기 상세 정보 계산 함수
+    function getMaturityInfo(item) {
+      if (!item.durationMonths || !item.startYearMonth) return null;
+      const [sYear, sMonth] = item.startYearMonth.split('-').map(Number);
+      if (!sYear || !sMonth) return null;
+      const elapsedMonths = (currentYear - sYear) * 12 + (currentMonth - sMonth);
+      const remainingMonths = Math.max(0, item.durationMonths - elapsedMonths);
+      const totalMonthsZeroBased = (sYear * 12 + (sMonth - 1)) + item.durationMonths - 1;
+      const endYear = Math.floor(totalMonthsZeroBased / 12);
+      const endMonth = (totalMonthsZeroBased % 12) + 1;
+      return {
+        isMatured: elapsedMonths >= item.durationMonths,
+        elapsedMonths: Math.max(0, elapsedMonths),
+        remainingMonths,
+        endYearMonth: `${endYear}.${String(endMonth).padStart(2, '0')}`
+      };
     }
 
     function mapFromDB(row) {
@@ -548,17 +580,188 @@
       };
     }
 
+    // =========================================================================
+    // ⭐ 결제수단별 상위 3개 출금계좌 / 카드명 집계 및 원터치 선택 로직
+    // =========================================================================
+    function recordPaymentDetailHistory(method, detail) {
+      if (!method || !detail) return;
+      const trimmed = detail.trim();
+      if (!trimmed) return;
+      try {
+        const key = HISTORY_STORAGE_PREFIX + method;
+        const stored = JSON.parse(localStorage.getItem(key) || '{}');
+        stored[trimmed] = (Number(stored[trimmed]) || 0) + 1;
+        localStorage.setItem(key, JSON.stringify(stored));
+      } catch (e) {
+        // Ignore storage error
+      }
+    }
+
+    function getFrequentPaymentDetails(method) {
+      const counts = {};
+      // 1) 로컬 누적 히스토리 반영
+      try {
+        const stored = JSON.parse(localStorage.getItem(HISTORY_STORAGE_PREFIX + method) || '{}');
+        Object.entries(stored).forEach(([name, cnt]) => {
+          if (name.trim()) counts[name.trim()] = (counts[name.trim()] || 0) + Number(cnt);
+        });
+      } catch (e) {}
+
+      // 2) 현재 등록된 지출 항목(클라우드 동기화 데이터 포함)에서 실제 사용 빈도 가산 (가중치 +2)
+      expenses.forEach(item => {
+        if (item.paymentMethod === method && item.paymentDetail && item.paymentDetail.trim()) {
+          const name = item.paymentDetail.trim();
+          counts[name] = (counts[name] || 0) + 2;
+        }
+      });
+
+      return Object.entries(counts)
+        .sort((a, b) => b[1] - a[1])
+        .map(entry => entry[0]);
+    }
+
+    function renderFrequentPaymentChips(method) {
+      const currentMethod = method || document.getElementById('itemPaymentMethod').value;
+      const allDetails = getFrequentPaymentDetails(currentMethod);
+      const top3 = allDetails.slice(0, 3);
+
+      // datalist 자동완성 목록 업데이트
+      const dataListEl = document.getElementById('paymentDetailDataList');
+      dataListEl.innerHTML = allDetails.map(name => `<option value="${escapeHtml(name)}"></option>`).join('');
+
+      // 결제수단 라벨 텍스트 업데이트
+      const methodNames = { account: '계좌이체 계좌', credit: '신용카드', check: '체크카드', direct: '송금 계좌' };
+      const labelEl = document.getElementById('frequentPaymentLabel');
+      if (labelEl) {
+        labelEl.innerHTML = `<i data-lucide="zap" class="w-3 h-3"></i> 자주 쓰는 ${methodNames[currentMethod] || '계좌/카드'} TOP 3 (터치 선택)`;
+      }
+
+      const chipsContainer = document.getElementById('frequentPaymentChips');
+      const currentInputVal = document.getElementById('itemPaymentDetail').value.trim();
+
+      if (top3.length === 0) {
+        chipsContainer.innerHTML = `<span class="text-[10px] text-slate-400">이 결제수단으로 등록된 내역이 없습니다. 1회 저장 시 자동 생성됩니다.</span>`;
+        lucide.createIcons();
+        return;
+      }
+
+      chipsContainer.innerHTML = top3.map((name, idx) => {
+        const isSelected = currentInputVal === name;
+        return `
+          <button type="button" data-detail="${escapeHtml(name)}" class="freq-detail-chip px-2.5 py-1 rounded-lg border text-[11px] font-semibold transition flex items-center gap-1 active:scale-95 ${
+            isSelected
+              ? 'bg-indigo-600 border-indigo-600 text-white shadow-sm'
+              : 'bg-white border-indigo-200 text-indigo-700 hover:bg-indigo-100/70'
+          }">
+            <span class="text-[9px] opacity-75">${idx + 1}위</span>
+            <span>${escapeHtml(name)}</span>
+          </button>
+        `;
+      }).join('');
+
+      lucide.createIcons();
+    }
+
+    // =========================================================================
+    // ⭐ 금액 한글 미리보기 업데이트 로직
+    // =========================================================================
+    function formatKoreanAmount(num) {
+      if (!num || num <= 0) return '0원';
+      const n = Math.floor(num);
+      const eok = Math.floor(n / 100000000);
+      const man = Math.floor((n % 100000000) / 10000);
+      const rest = n % 10000;
+      let res = '';
+      if (eok > 0) res += `${eok}억 `;
+      if (man > 0) res += `${man.toLocaleString()}만 `;
+      if (rest > 0 || res === '') res += `${rest.toLocaleString()}원`;
+      else res += '원';
+      return res.trim();
+    }
+
+    function updateAmountPreview() {
+      const val = Number(document.getElementById('itemAmount').value) || 0;
+      const previewEl = document.getElementById('amountKoreanPreview');
+      if (previewEl) {
+        previewEl.textContent = val > 0 ? `${formatKoreanAmount(val)} (${val.toLocaleString()}원)` : '0원';
+      }
+    }
+
+    // =========================================================================
+    // ⭐ 모달 내 성격구분 / 변동비 / 약정기간 UI 상태 제어 함수
+    // =========================================================================
+    function setModalTypeUI(type) {
+      document.getElementById('itemType').value = type;
+      const btnExp = document.getElementById('btnTypeExpense');
+      const btnSav = document.getElementById('btnTypeSavings');
+      if (type === 'savings') {
+        btnSav.className = 'flex items-center justify-center gap-1.5 py-2.5 rounded-xl border font-semibold transition bg-blue-50 border-blue-500 text-blue-700 shadow-sm';
+        btnExp.className = 'flex items-center justify-center gap-1.5 py-2.5 rounded-xl border font-semibold transition bg-white border-slate-200 text-slate-600 hover:bg-slate-50';
+      } else {
+        btnExp.className = 'flex items-center justify-center gap-1.5 py-2.5 rounded-xl border font-semibold transition bg-rose-50 border-rose-500 text-rose-700 shadow-sm';
+        btnSav.className = 'flex items-center justify-center gap-1.5 py-2.5 rounded-xl border font-semibold transition bg-white border-slate-200 text-slate-600 hover:bg-slate-50';
+      }
+    }
+
+    function setModalVariableUI(isVar, baseAmt = null) {
+      document.getElementById('itemIsVariable').value = isVar ? 'true' : 'false';
+      const btnVar = document.getElementById('btnToggleVariable');
+      const baseArea = document.getElementById('variableBaseInputArea');
+      const baseInput = document.getElementById('itemBaseAmount');
+
+      if (isVar) {
+        btnVar.textContent = '⚡ 변동비 켜짐';
+        btnVar.className = 'px-2.5 py-1 rounded-lg border text-[11px] font-bold bg-amber-500 border-amber-600 text-white shadow-sm transition shrink-0';
+        baseArea.classList.remove('hidden');
+        baseInput.value = baseAmt ? baseAmt : '';
+      } else {
+        btnVar.textContent = '고정액';
+        btnVar.className = 'px-2.5 py-1 rounded-lg border text-[11px] font-semibold bg-white border-slate-200 text-slate-500 transition shrink-0';
+        baseArea.classList.add('hidden');
+        baseInput.value = '';
+      }
+    }
+
+    function setModalDurationUI(mode, months = null, startYm = null) {
+      currentDurationMode = mode;
+      const btnIndef = document.getElementById('btnDurationIndefinite');
+      const btnFixed = document.getElementById('btnDurationFixed');
+      const inputArea = document.getElementById('durationInputArea');
+      const monthsInput = document.getElementById('itemDurationMonths');
+      const startInput = document.getElementById('itemStartYearMonth');
+
+      if (mode === 'fixed') {
+        btnFixed.className = 'py-1.5 rounded-lg border text-xs font-medium bg-indigo-50 border-indigo-500 text-indigo-700';
+        btnIndef.className = 'py-1.5 rounded-lg border text-xs font-medium bg-white border-slate-200 text-slate-600';
+        inputArea.classList.remove('hidden');
+        monthsInput.value = months || '';
+        startInput.value = startYm || `${currentYear}-${String(currentMonth).padStart(2, '0')}`;
+      } else {
+        btnIndef.className = 'py-1.5 rounded-lg border text-xs font-medium bg-indigo-50 border-indigo-500 text-indigo-700';
+        btnFixed.className = 'py-1.5 rounded-lg border text-xs font-medium bg-white border-slate-200 text-slate-600';
+        inputArea.classList.add('hidden');
+        monthsInput.value = '';
+        startInput.value = '';
+      }
+    }
+
+    // =========================================================================
+    // ⭐ Supabase 설정 및 실시간 동기화 로직
+    // =========================================================================
     function getStoredSupabaseConfig() {
       try {
         const saved = JSON.parse(localStorage.getItem(CONFIG_STORAGE_KEY) || '{}');
         const defaultUrl = (window.DEFAULT_SUPABASE_URL || '').trim();
         const defaultKey = (window.DEFAULT_SUPABASE_KEY || '').trim();
         return {
-          url: cleanSupabaseUrl(defaultUrl !== '' ? defaultUrl : (saved.url || '')),
-          key: cleanSupabaseKey(defaultKey !== '' ? defaultKey : (saved.key || ''))
+          url: cleanSupabaseUrl(saved.url || defaultUrl),
+          key: cleanSupabaseKey(saved.key || defaultKey)
         };
       } catch (e) {
-        return { url: '', key: '' };
+        return {
+          url: cleanSupabaseUrl(window.DEFAULT_SUPABASE_URL || ''),
+          key: cleanSupabaseKey(window.DEFAULT_SUPABASE_KEY || '')
+        };
       }
     }
 
@@ -634,7 +837,7 @@
               expenses = res.data.map(mapFromDB);
               localStorage.setItem(STORAGE_KEY, JSON.stringify(expenses));
               render();
-              showToast('아내분의 변경 사항이 실시간 반영되었습니다! 🔄');
+              showToast('실시간 변경 사항이 반영되었습니다! 🔄');
             }
           })
           .subscribe();
@@ -686,19 +889,6 @@
       }, 2500);
     }
 
-    function formatKoreanAmount(num) {
-      if (!num || num <= 0) return '0원';
-      const n = Math.floor(num);
-      const eok = Math.floor(n / 100000000);
-      const man = Math.floor((n % 100000000) / 10000);
-      const rest = n % 10000;
-      let res = '';
-      if (eok > 0) res += `${eok}억 `;
-      if (man > 0) res += `${man.toLocaleString()}만 `;
-      if (rest > 0 || res === '') res += `${rest.toLocaleString()}원`;
-      return res.trim();
-    }
-
     function getScheduleBadge(day) {
       const effDay = getEffectiveDay(day);
       const diff = effDay - currentDay;
@@ -711,10 +901,13 @@
       const icons = { account: '🏦 계좌', credit: '💳 신용', check: '💳 체크', direct: '💸 송금' };
       const label = icons[method] || '기타';
       const detailText = detail ? ` · <b class="text-slate-800">${escapeHtml(detail)}</b>` : '';
-      const ownerBadge = owner ? `<span class="bg-indigo-50 text-indigo-700 px-1 py-0.2 rounded font-bold">${owner}</span>` : '';
+      const ownerBadge = owner ? `<span class="bg-indigo-50 text-indigo-700 px-1 py-0.2 rounded font-bold">${escapeHtml(owner)}</span>` : '';
       return `<span class="text-[10px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded border border-slate-200">${ownerBadge} ${label}${detailText}</span>`;
     }
 
+    // =========================================================================
+    // ⭐ 포트폴리오 & 계좌별/날짜별/카테고리별/만기별 분석 렌더링
+    // =========================================================================
     function renderPortfolioSection(expMonthly, savMonthly, totalMonthly) {
       const expRate = totalMonthly > 0 ? Math.round((expMonthly / totalMonthly) * 100) : 0;
       const savRate = totalMonthly > 0 ? (100 - expRate) : 0;
@@ -725,68 +918,110 @@
       document.getElementById('barSavingsFill').style.width = `${savRate}%`;
 
       const container = document.getElementById('portfolioContent');
-      // 만기 종료되지 않은 활성 항목만 필터링
       const activeExpenses = expenses.filter(i => !checkIsMatured(i));
 
-      if (activeExpenses.length === 0) {
+      if (activeExpenses.length === 0 && currentPortfolioTab !== 'maturity') {
         container.innerHTML = `<div class="text-center py-6 text-slate-400 text-xs">등록된 활성 항목이 없습니다.</div>`;
         return;
       }
 
       if (currentPortfolioTab === 'account') {
         const groups = {};
+        const methodLabels = { account: '🏦 계좌이체', credit: '💳 신용카드', check: '💳 체크카드', direct: '💸 직접송금' };
         activeExpenses.forEach(item => {
           const accountName = item.paymentDetail ? item.paymentDetail : '상세 미지정';
           const key = `${accountName}__${item.paymentMethod}`;
-          if (!groups[key]) groups[key] = { accountName, totalMonthly: 0, remainingFromToday: 0, items: [] };
+          if (!groups[key]) {
+            groups[key] = { accountName, method: item.paymentMethod, totalMonthly: 0, remainingFromToday: 0, items: [] };
+          }
           groups[key].totalMonthly += item.amount;
           const effDay = getEffectiveDay(item.day);
           if (effDay >= currentDay) groups[key].remainingFromToday += item.amount;
           groups[key].items.push(item);
         });
 
-        container.innerHTML = Object.keys(groups).map(k => {
+        const sortedKeys = Object.keys(groups).sort((a, b) => groups[b].remainingFromToday - groups[a].remainingFromToday || groups[b].totalMonthly - groups[a].totalMonthly);
+
+        container.innerHTML = sortedKeys.map(k => {
           const g = groups[k];
+          const itemNames = g.items.map(i => `${escapeHtml(i.name)}(${getEffectiveDay(i.day)}일)`).join(', ');
           return `
-            <div class="p-3.5 rounded-xl border border-indigo-200 bg-indigo-50/20">
+            <div class="p-3 rounded-xl border border-indigo-100 bg-indigo-50/30">
               <div class="flex justify-between items-center mb-1">
-                <span class="font-bold text-slate-900 text-xs">🏦 ${escapeHtml(g.accountName)}</span>
+                <div class="flex items-center gap-1.5">
+                  <span class="font-bold text-slate-900 text-xs">${escapeHtml(g.accountName)}</span>
+                  <span class="text-[10px] bg-white border border-slate-200 text-slate-500 px-1.5 py-0.2 rounded">${methodLabels[g.method] || '기타'}</span>
+                </div>
                 <span class="text-rose-600 font-bold text-xs">오늘 이후 ${g.remainingFromToday.toLocaleString()}원</span>
               </div>
-              <div class="text-[11px] text-slate-500">월 전체 고정출금: <b>${g.totalMonthly.toLocaleString()}원</b></div>
+              <div class="flex justify-between items-center text-[11px] text-slate-500">
+                <span class="truncate pr-2">${itemNames}</span>
+                <span class="shrink-0">월 총액 <b>${g.totalMonthly.toLocaleString()}원</b></span>
+              </div>
             </div>
           `;
         }).join('');
       } else if (currentPortfolioTab === 'schedule') {
-        const upcoming = activeExpenses.filter(i => getEffectiveDay(i.day) >= currentDay).sort((a, b) => getEffectiveDay(a.day) - getEffectiveDay(b.day));
+        const upcoming = activeExpenses
+          .filter(i => getEffectiveDay(i.day) >= currentDay)
+          .sort((a, b) => getEffectiveDay(a.day) - getEffectiveDay(b.day));
         container.innerHTML = upcoming.length > 0 ? upcoming.map(item => `
           <div class="p-2.5 rounded-xl border border-slate-200 bg-white flex justify-between items-center">
-            <div>
-              <span class="text-xs font-bold text-indigo-700">${getEffectiveDay(item.day)}일</span>
-              <span class="text-xs font-semibold ml-2">${escapeHtml(item.name)}</span>
+            <div class="flex items-center gap-2 min-w-0">
+              <span class="text-xs font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded shrink-0">${getEffectiveDay(item.day)}일</span>
+              <span class="text-xs font-semibold truncate">${escapeHtml(item.name)}</span>
+              <span class="text-[10px] text-slate-400 shrink-0">(${escapeHtml(item.paymentDetail || '미지정')})</span>
             </div>
-            <span class="text-xs font-bold text-rose-600">${item.amount.toLocaleString()}원</span>
+            <span class="text-xs font-bold text-rose-600 shrink-0">${item.amount.toLocaleString()}원</span>
           </div>
-        `).join('') : '<div class="text-center py-4 text-xs text-slate-400">남은 출금 일정이 없습니다.</div>';
+        `).join('') : '<div class="text-center py-4 text-xs text-slate-400">이번 달 남은 출금 일정이 없습니다. 🎉</div>';
       } else if (currentPortfolioTab === 'category') {
-        container.innerHTML = `<div class="text-xs text-slate-500 text-center py-4">카테고리별 요약 완료</div>`;
+        const catMap = {};
+        activeExpenses.forEach(item => {
+          const cat = item.category || '기타';
+          if (!catMap[cat]) catMap[cat] = { amount: 0, count: 0 };
+          catMap[cat].amount += item.amount;
+          catMap[cat].count += 1;
+        });
+        const sortedCats = Object.entries(catMap).sort((a, b) => b[1].amount - a[1].amount);
+        container.innerHTML = sortedCats.map(([catName, info]) => {
+          const pct = totalMonthly > 0 ? Math.round((info.amount / totalMonthly) * 100) : 0;
+          return `
+            <div class="p-2.5 rounded-xl border border-slate-200 bg-white">
+              <div class="flex justify-between items-center text-xs mb-1">
+                <span class="font-bold text-slate-800">${escapeHtml(catName)} <span class="text-[10px] font-normal text-slate-400">(${info.count}건)</span></span>
+                <span class="font-bold text-indigo-700">${info.amount.toLocaleString()}원 (${pct}%)</span>
+              </div>
+              <div class="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                <div class="h-full bg-indigo-500 rounded-full" style="width: ${pct}%"></div>
+              </div>
+            </div>
+          `;
+        }).join('');
       } else if (currentPortfolioTab === 'maturity') {
         const durationItems = expenses.filter(i => i.durationMonths && i.durationMonths > 0);
         container.innerHTML = durationItems.length > 0 ? durationItems.map(item => {
-          const isMat = checkIsMatured(item);
+          const mInfo = getMaturityInfo(item);
+          const isMat = mInfo && mInfo.isMatured;
           return `
             <div class="p-3 rounded-xl border ${isMat ? 'bg-slate-100 border-slate-300 opacity-70' : 'bg-slate-50 border-slate-200'}">
-              <div class="flex justify-between font-bold text-xs">
-                <span>${escapeHtml(item.name)} ${isMat ? '<span class="text-rose-600">(만기종료)</span>' : ''}</span>
+              <div class="flex justify-between items-center font-bold text-xs">
+                <span>${escapeHtml(item.name)} ${isMat ? '<span class="text-rose-600 ml-1">(만기종료 · 합계 자동제외)</span>' : `<span class="text-indigo-600 ml-1">(남은 ${mInfo ? mInfo.remainingMonths : '?'}개월)</span>`}</span>
                 <span>${item.amount.toLocaleString()}원/월</span>
               </div>
-              <div class="text-[10px] text-slate-500 mt-1">총 ${item.durationMonths}개월 약정 (시작: ${item.startYearMonth || '미지정'})</div>
+              <div class="flex justify-between text-[10px] text-slate-500 mt-1">
+                <span>약정: 총 ${item.durationMonths}개월 (시작: ${item.startYearMonth || '미지정'} ~ 만기: ${mInfo ? mInfo.endYearMonth : '-'})</span>
+                ${!isMat && mInfo ? `<span class="font-semibold text-slate-700">만기까지 ${(mInfo.remainingMonths * item.amount).toLocaleString()}원</span>` : ''}
+              </div>
             </div>
           `;
-        }).join('') : '<div class="text-center py-4 text-xs text-slate-400">약정 기한 항목이 없습니다.</div>';
+        }).join('') : '<div class="text-center py-4 text-xs text-slate-400">약정 기한이 설정된 항목이 없습니다.</div>';
       }
     }
 
+    // =========================================================================
+    // ⭐ 메인 대시보드 및 지출 리스트 렌더링
+    // =========================================================================
     function render() {
       let expMonthly = 0;
       let savMonthly = 0;
@@ -797,7 +1032,6 @@
       let variableCount = 0;
       const upcomingItems = [];
 
-      // 3번 기능: 만기 종료된 항목은 월 총액 및 남은 출금 계산에서 자동 제외
       const activeExpenses = expenses.filter(i => !checkIsMatured(i));
 
       activeExpenses.forEach(item => {
@@ -842,6 +1076,18 @@
       document.getElementById('todayRemainingAmount').textContent = `${todayRemaining.toLocaleString()}원`;
       document.getElementById('todayRemainingCount').textContent = `오늘~말일 총 ${todayRemainingCount}건`;
 
+      // 다음 출금 일정 안내 텍스트 업데이트
+      const nextNoticeEl = document.getElementById('nextPaymentNotice');
+      if (upcomingItems.length > 0) {
+        upcomingItems.sort((a, b) => getEffectiveDay(a.day) - getEffectiveDay(b.day));
+        const nextItem = upcomingItems[0];
+        const nextDay = getEffectiveDay(nextItem.day);
+        const prefix = nextDay === currentDay ? '오늘 출금' : `다음(${nextDay}일)`;
+        nextNoticeEl.textContent = `${prefix}: ${nextItem.name} (${nextItem.amount.toLocaleString()}원)`;
+      } else {
+        nextNoticeEl.textContent = '이번 달 남은 출금 일정 없음 🎉';
+      }
+
       renderPortfolioSection(expMonthly, savMonthly, totalMonthly);
 
       const searchKeyword = document.getElementById('searchInput').value.trim().toLowerCase();
@@ -855,7 +1101,6 @@
         if (currentFilter === 'savings' && (isMat || item.type !== 'savings')) return false;
         if (currentFilter === 'variable' && (isMat || !item.isVariable)) return false;
 
-        // 5번 기능: 부부 명의 필터링
         if (ownerFilter !== 'all' && item.owner !== ownerFilter) return false;
         
         if (searchKeyword) {
@@ -867,7 +1112,12 @@
 
       filtered.sort((a, b) => {
         if (sortVal === 'day') return getEffectiveDay(a.day) - getEffectiveDay(b.day);
-        if (sortVal === 'upcomingFirst') return getEffectiveDay(a.day) - getEffectiveDay(b.day);
+        if (sortVal === 'upcomingFirst') {
+          const aUp = !checkIsMatured(a) && getEffectiveDay(a.day) >= currentDay ? 0 : 1;
+          const bUp = !checkIsMatured(b) && getEffectiveDay(b.day) >= currentDay ? 0 : 1;
+          if (aUp !== bUp) return aUp - bUp;
+          return getEffectiveDay(a.day) - getEffectiveDay(b.day);
+        }
         if (sortVal === 'amountDesc') return b.amount - a.amount;
         if (sortVal === 'amountAsc') return a.amount - b.amount;
         return 0;
@@ -892,39 +1142,61 @@
           card.className = `p-3.5 rounded-xl border transition shadow-sm bg-white flex items-center justify-between gap-3 ${isMat ? 'opacity-60 bg-slate-100 border-slate-300' : isPassed ? 'opacity-70 bg-slate-50' : 'border-slate-200'}`;
 
           const isSavings = item.type === 'savings';
-          
-          // 4번 기능: 변동비 평소 기준액 대비 증감 계산
+          const typeBadge = isSavings
+            ? '<span class="text-[9px] badge-savings px-1.5 py-0.2 rounded font-semibold">저축</span>'
+            : '<span class="text-[9px] badge-expense px-1.5 py-0.2 rounded font-semibold">지출</span>';
+          const varBadge = item.isVariable
+            ? '<span class="text-[9px] badge-variable px-1.5 py-0.2 rounded font-semibold">⚡변동</span>'
+            : '';
+
           let diffBadge = '';
           if (item.isVariable && item.baseAmount) {
             const diff = item.amount - item.baseAmount;
             if (diff > 0) diffBadge = `<span class="text-[10px] text-rose-600 font-bold block">+${diff.toLocaleString()}원 ▲ (평소 대비)</span>`;
             else if (diff < 0) diffBadge = `<span class="text-[10px] text-emerald-600 font-bold block">${diff.toLocaleString()}원 ▼ (절약)</span>`;
+            else diffBadge = `<span class="text-[10px] text-slate-400 block">평소 평균과 동일</span>`;
           }
+
+          // 인라인 1초 금액 수정 모드인지 확인
+          const amountSectionHtml = (inlineEditingId === item.id)
+            ? `
+              <div class="flex items-center justify-end gap-1">
+                <input type="number" id="inlineInput_${item.id}" value="${item.amount}" min="1" step="1" inputmode="numeric" class="w-24 px-2 py-1 text-xs font-bold border-2 border-indigo-500 rounded-lg text-right focus:outline-none" />
+                <button type="button" data-id="${item.id}" class="save-inline-amt-btn bg-indigo-600 text-white px-2 py-1 rounded-lg text-[11px] font-bold">확인</button>
+                <button type="button" class="cancel-inline-amt-btn bg-slate-200 text-slate-600 px-1.5 py-1 rounded-lg text-[11px]">취소</button>
+              </div>
+            `
+            : `
+              <button type="button" data-id="${item.id}" class="quick-amount-edit-btn font-bold text-sm hover:underline flex items-center justify-end gap-1 ml-auto ${isSavings ? 'text-blue-700' : 'text-slate-900'}" title="터치하여 금액 1초 수정">
+                <span>${item.amount.toLocaleString()}원</span>
+                <i data-lucide="pen-line" class="w-3 h-3 text-slate-400"></i>
+              </button>
+            `;
 
           card.innerHTML = `
             <div class="flex items-center gap-3 min-w-0">
-              <div class="w-12 py-1.5 rounded-xl border text-center shrink-0 bg-indigo-50/80 border-indigo-200 text-indigo-900">
+              <div class="w-12 py-1.5 rounded-xl border text-center shrink-0 ${isSavings ? 'bg-blue-50/80 border-blue-200 text-blue-900' : 'bg-indigo-50/80 border-indigo-200 text-indigo-900'}">
                 <span class="text-[9px] font-medium block leading-none">매월</span>
                 <span class="text-sm font-bold leading-tight">${effDay}일</span>
               </div>
               <div class="min-w-0">
-                <div class="flex items-center gap-1.5 flex-wrap">
+                <div class="flex items-center gap-1 flex-wrap">
+                  ${typeBadge}
+                  ${varBadge}
                   <span class="font-bold text-xs text-slate-800 truncate">${escapeHtml(item.name)}</span>
                   ${isMat ? '<span class="text-[9px] bg-rose-600 text-white px-1.5 py-0.2 rounded font-bold">만기종료</span>' : getScheduleBadge(item.day)}
                 </div>
                 <div class="flex items-center gap-1.5 mt-1.5 flex-wrap text-slate-500">
                   ${getPaymentBadge(item.paymentMethod, item.paymentDetail, item.owner)}
+                  ${item.memo ? `<span class="text-[10px] text-slate-400 truncate max-w-[140px]">· ${escapeHtml(item.memo)}</span>` : ''}
                 </div>
               </div>
             </div>
             <div class="text-right flex-shrink-0">
-              <button type="button" data-id="${item.id}" class="quick-amount-edit-btn font-bold text-sm hover:underline flex items-center justify-end gap-0.5 ml-auto ${isSavings ? 'text-blue-700' : 'text-slate-900'}">
-                <span>${item.amount.toLocaleString()}원</span>
-                <i data-lucide="pen-line" class="w-3 h-3 text-slate-400"></i>
-              </button>
+              ${amountSectionHtml}
               ${diffBadge}
               <div class="flex items-center justify-end gap-1 mt-1">
-                <button data-id="${item.id}" class="edit-btn text-slate-400 hover:text-indigo-600 p-1" title="수정"><i data-lucide="settings-2" class="w-3.5 h-3.5"></i></button>
+                <button data-id="${item.id}" class="edit-btn text-slate-400 hover:text-indigo-600 p-1" title="상세 수정"><i data-lucide="settings-2" class="w-3.5 h-3.5"></i></button>
                 <button data-id="${item.id}" class="delete-btn text-slate-400 hover:text-rose-600 p-1" title="삭제"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
               </div>
             </div>
@@ -933,20 +1205,69 @@
         });
       }
       lucide.createIcons();
+
+      if (inlineEditingId) {
+        const inp = document.getElementById(`inlineInput_${inlineEditingId}`);
+        if (inp) {
+          inp.focus();
+          inp.select();
+        }
+      }
     }
 
-    // 모달 제어
+    // =========================================================================
+    // ⭐ 모달 열기 / 닫기 및 이벤트 리스너 바인딩
+    // =========================================================================
     const modal = document.getElementById('itemModal');
     const form = document.getElementById('itemForm');
     const syncModal = document.getElementById('syncModal');
 
-    document.getElementById('openSyncModalBtn').addEventListener('click', () => syncModal.classList.remove('hidden'));
-    document.getElementById('bannerActionBtn').addEventListener('click', () => syncModal.classList.remove('hidden'));
+    function openSyncModal() {
+      const cfg = getStoredSupabaseConfig();
+      document.getElementById('cfgSupabaseUrl').value = cfg.url || '';
+      document.getElementById('cfgSupabaseKey').value = cfg.key || '';
+      syncModal.classList.remove('hidden');
+    }
+
+    document.getElementById('openSyncModalBtn').addEventListener('click', openSyncModal);
+    document.getElementById('bannerActionBtn').addEventListener('click', openSyncModal);
     document.getElementById('closeSyncModalBtn').addEventListener('click', () => syncModal.classList.add('hidden'));
+
+    document.getElementById('syncConfigForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const url = cleanSupabaseUrl(document.getElementById('cfgSupabaseUrl').value);
+      const key = cleanSupabaseKey(document.getElementById('cfgSupabaseKey').value);
+      localStorage.setItem(CONFIG_STORAGE_KEY, JSON.stringify({ url, key }));
+      syncModal.classList.add('hidden');
+      await initSupabaseSync();
+      showToast('클라우드 연동 설정이 저장되었습니다.');
+    });
+
+    document.getElementById('btnDisconnectSync').addEventListener('click', () => {
+      localStorage.removeItem(CONFIG_STORAGE_KEY);
+      if (realtimeChannel && supabaseClient) supabaseClient.removeChannel(realtimeChannel);
+      supabaseClient = null;
+      syncModal.classList.add('hidden');
+      initSupabaseSync();
+      showToast('사용자 지정 연동 설정을 초기화했습니다.');
+    });
+
+    function selectOwnerButton(ownerVal) {
+      document.getElementById('itemOwner').value = ownerVal;
+      document.querySelectorAll('.owner-btn').forEach(b => {
+        if (b.dataset.owner === ownerVal) {
+          b.className = 'owner-btn py-1.5 rounded-lg border text-xs font-medium bg-indigo-50 border-indigo-500 text-indigo-700';
+        } else {
+          b.className = 'owner-btn py-1.5 rounded-lg border text-xs font-medium bg-white border-slate-200 text-slate-600';
+        }
+      });
+    }
 
     function openModal(editId = null) {
       form.reset();
       document.getElementById('itemId').value = '';
+      document.getElementById('moreOptionsDetails').open = false;
+
       if (editId) {
         const item = expenses.find(i => i.id === editId);
         if (!item) return;
@@ -956,18 +1277,31 @@
         document.getElementById('itemAmount').value = item.amount;
         document.getElementById('itemDay').value = item.day;
         document.getElementById('itemCategory').value = item.category;
-        document.getElementById('itemPaymentMethod').value = item.paymentMethod;
+        document.getElementById('itemPaymentMethod').value = item.paymentMethod || 'account';
         document.getElementById('itemPaymentDetail').value = item.paymentDetail || '';
         document.getElementById('itemMemo').value = item.memo || '';
-        document.getElementById('itemOwner').value = item.owner || '남편';
-        document.querySelectorAll('.owner-btn').forEach(b => {
-          if (b.dataset.owner === (item.owner || '남편')) {
-            b.className = "owner-btn py-1.5 rounded-lg border text-xs font-medium bg-indigo-50 border-indigo-500 text-indigo-700";
-          } else {
-            b.className = "owner-btn py-1.5 rounded-lg border text-xs font-medium bg-white border-slate-200 text-slate-600";
-          }
-        });
+
+        setModalTypeUI(item.type || 'expense');
+        selectOwnerButton(item.owner || '남편');
+        setModalVariableUI(Boolean(item.isVariable), item.baseAmount);
+
+        if (item.durationMonths && item.durationMonths > 0) {
+          setModalDurationUI('fixed', item.durationMonths, item.startYearMonth);
+          document.getElementById('moreOptionsDetails').open = true;
+        } else {
+          setModalDurationUI('indefinite');
+        }
+      } else {
+        document.getElementById('modalTitle').textContent = '고정 항목 추가';
+        setModalTypeUI('expense');
+        selectOwnerButton('남편');
+        setModalVariableUI(false);
+        setModalDurationUI('indefinite');
+        document.getElementById('itemPaymentMethod').value = 'account';
       }
+
+      updateAmountPreview();
+      renderFrequentPaymentChips(document.getElementById('itemPaymentMethod').value);
       modal.classList.remove('hidden');
       lucide.createIcons();
     }
@@ -976,20 +1310,74 @@
     document.getElementById('closeModalBtn').addEventListener('click', () => modal.classList.add('hidden'));
     document.getElementById('cancelModalBtn').addEventListener('click', () => modal.classList.add('hidden'));
 
-    // 명의 선택 버튼 제어 (5번 기능)
+    // 1. 성격 구분 버튼 이벤트
+    document.getElementById('btnTypeExpense').addEventListener('click', () => setModalTypeUI('expense'));
+    document.getElementById('btnTypeSavings').addEventListener('click', () => {
+      setModalTypeUI('savings');
+      if (!document.getElementById('itemId').value) {
+        document.getElementById('itemCategory').value = '저축/투자';
+      }
+    });
+
+    // 2. 담당 명의 선택 버튼 이벤트
     document.querySelectorAll('.owner-btn').forEach(btn => {
+      btn.addEventListener('click', () => selectOwnerButton(btn.dataset.owner));
+    });
+
+    // 3. 금액 한글 미리보기 & 빠른 금액 추가 버튼 이벤트
+    document.getElementById('itemAmount').addEventListener('input', updateAmountPreview);
+    document.getElementById('itemAmount').addEventListener('change', updateAmountPreview);
+
+    document.querySelectorAll('.quick-amt-btn').forEach(btn => {
       btn.addEventListener('click', () => {
-        document.querySelectorAll('.owner-btn').forEach(b => {
-          b.className = "owner-btn py-1.5 rounded-lg border text-xs font-medium bg-white border-slate-200 text-slate-600";
-        });
-        btn.className = "owner-btn py-1.5 rounded-lg border text-xs font-medium bg-indigo-50 border-indigo-500 text-indigo-700";
-        document.getElementById('itemOwner').value = btn.dataset.owner;
+        const addVal = Number(btn.dataset.amt) || 0;
+        const amtInput = document.getElementById('itemAmount');
+        const currentVal = Number(amtInput.value) || 0;
+        amtInput.value = currentVal + addVal;
+        updateAmountPreview();
       });
     });
 
+    document.getElementById('btnResetAmt').addEventListener('click', () => {
+      document.getElementById('itemAmount').value = '';
+      updateAmountPreview();
+    });
+
+    // 4. 변동 고정비 토글 버튼 이벤트
+    document.getElementById('btnToggleVariable').addEventListener('click', () => {
+      const current = document.getElementById('itemIsVariable').value === 'true';
+      const currentAmt = Number(document.getElementById('itemAmount').value) || null;
+      setModalVariableUI(!current, currentAmt);
+    });
+
+    // 5. 결제수단 변경 및 상위 3개 계좌/카드 원터치 선택 칩 클릭 이벤트
+    document.getElementById('itemPaymentMethod').addEventListener('change', (e) => {
+      renderFrequentPaymentChips(e.target.value);
+    });
+
+    document.getElementById('itemPaymentDetail').addEventListener('input', () => {
+      renderFrequentPaymentChips(document.getElementById('itemPaymentMethod').value);
+    });
+
+    document.getElementById('frequentPaymentChips').addEventListener('click', (e) => {
+      const chip = e.target.closest('.freq-detail-chip');
+      if (!chip) return;
+      const selectedDetail = chip.dataset.detail;
+      document.getElementById('itemPaymentDetail').value = selectedDetail;
+      renderFrequentPaymentChips(document.getElementById('itemPaymentMethod').value);
+    });
+
+    // 6. 약정 만기 설정 버튼 이벤트
+    document.getElementById('btnDurationIndefinite').addEventListener('click', () => setModalDurationUI('indefinite'));
+    document.getElementById('btnDurationFixed').addEventListener('click', () => setModalDurationUI('fixed'));
+
+    // 7. 항목 폼 저장 제출 이벤트
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
       const id = document.getElementById('itemId').value || (Date.now().toString() + Math.random().toString(36).substr(2, 5));
+      const type = document.getElementById('itemType').value || 'expense';
+      const isVariable = document.getElementById('itemIsVariable').value === 'true';
+      const baseAmount = isVariable ? (Number(document.getElementById('itemBaseAmount').value) || null) : null;
       const name = document.getElementById('itemName').value.trim();
       const amount = Number(document.getElementById('itemAmount').value);
       const day = Number(document.getElementById('itemDay').value);
@@ -999,9 +1387,15 @@
       const memo = document.getElementById('itemMemo').value.trim();
       const owner = document.getElementById('itemOwner').value;
 
+      const durationMonths = currentDurationMode === 'fixed' ? (Number(document.getElementById('itemDurationMonths').value) || null) : null;
+      const startYearMonth = (currentDurationMode === 'fixed' && durationMonths) ? (document.getElementById('itemStartYearMonth').value || null) : null;
+
+      // 자주 쓰는 결제수단별 계좌/카드명 빈도 기록
+      recordPaymentDetailHistory(paymentMethod, paymentDetail);
+
       const itemObj = {
-        id, type: 'expense', isVariable: false, name, amount, day, category, paymentMethod, paymentDetail, memo, owner,
-        durationMonths: null, startYearMonth: null
+        id, type, isVariable, baseAmount, name, amount, day, category, paymentMethod, paymentDetail, memo, owner,
+        durationMonths, startYearMonth
       };
 
       await syncSaveItem(itemObj);
@@ -1009,21 +1403,105 @@
       modal.classList.add('hidden');
     });
 
+    // 8. 리스트 내 버튼(인라인 금액 수정, 상세 수정, 삭제) 이벤트
     document.getElementById('expenseList').addEventListener('click', async (e) => {
+      const quickAmtBtn = e.target.closest('.quick-amount-edit-btn');
+      const saveInlineBtn = e.target.closest('.save-inline-amt-btn');
+      const cancelInlineBtn = e.target.closest('.cancel-inline-amt-btn');
       const delBtn = e.target.closest('.delete-btn');
       const editBtn = e.target.closest('.edit-btn');
-      if (delBtn && confirm('정말 삭제하시겠습니까?')) {
+
+      if (quickAmtBtn) {
+        inlineEditingId = quickAmtBtn.dataset.id;
+        render();
+      } else if (saveInlineBtn) {
+        const id = saveInlineBtn.dataset.id;
+        const inp = document.getElementById(`inlineInput_${id}`);
+        const newAmt = Number(inp ? inp.value : 0);
+        if (newAmt > 0) {
+          const item = expenses.find(i => i.id === id);
+          if (item) {
+            item.amount = newAmt;
+            inlineEditingId = null;
+            await syncSaveItem(item);
+            showToast(`${item.name} 금액이 ${newAmt.toLocaleString()}원으로 수정되었습니다.`);
+          }
+        }
+      } else if (cancelInlineBtn) {
+        inlineEditingId = null;
+        render();
+      } else if (delBtn && confirm('정말 삭제하시겠습니까?')) {
         await syncDeleteItem(delBtn.dataset.id);
         showToast('삭제되었습니다.');
       } else if (editBtn) {
-        openModal(editId = editBtn.dataset.id);
+        openModal(editBtn.dataset.id);
       }
     });
 
+    document.getElementById('expenseList').addEventListener('keydown', async (e) => {
+      if (e.key === 'Enter' && inlineEditingId && e.target.id === `inlineInput_${inlineEditingId}`) {
+        e.preventDefault();
+        const newAmt = Number(e.target.value);
+        if (newAmt > 0) {
+          const item = expenses.find(i => i.id === inlineEditingId);
+          if (item) {
+            item.amount = newAmt;
+            inlineEditingId = null;
+            await syncSaveItem(item);
+            showToast(`${item.name} 금액이 ${newAmt.toLocaleString()}원으로 수정되었습니다.`);
+          }
+        }
+      } else if (e.key === 'Escape' && inlineEditingId) {
+        inlineEditingId = null;
+        render();
+      }
+    });
+
+    // 9. 백업(JSON 내보내기) 및 복원(JSON 가져오기)
+    document.getElementById('exportBtn').addEventListener('click', () => {
+      const dataStr = JSON.stringify(expenses, null, 2);
+      const blob = new Blob([dataStr], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `fixed_expenses_backup_${currentYear}${String(currentMonth).padStart(2, '0')}${String(currentDay).padStart(2, '0')}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      showToast('데이터 백업 파일이 다운로드되었습니다.');
+    });
+
+    document.getElementById('importFile').addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = async (evt) => {
+        try {
+          const imported = JSON.parse(evt.target.result);
+          if (!Array.isArray(imported)) throw new Error('올바른 배열 형식이 아닙니다.');
+          expenses = imported;
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(expenses));
+          render();
+          if (supabaseClient && expenses.length > 0) {
+            isLocalMutating = true;
+            await supabaseClient.from('fixed_expenses').upsert(expenses.map(mapToDB));
+            setTimeout(() => { isLocalMutating = false; }, 600);
+          }
+          showToast(`총 ${expenses.length}건의 데이터가 복원되었습니다.`);
+        } catch (err) {
+          showToast('⚠️ 복원 실패: ' + err.message);
+        }
+        e.target.value = '';
+      };
+      reader.readAsText(file);
+    });
+
+    // 10. 탭 및 필터 이벤트
     document.querySelectorAll('.portfolio-tab').forEach(btn => {
       btn.addEventListener('click', () => {
-        document.querySelectorAll('.portfolio-tab').forEach(t => t.classList.remove('bg-white', 'text-indigo-700', 'shadow-sm'));
-        btn.classList.add('bg-white', 'text-indigo-700', 'shadow-sm');
+        document.querySelectorAll('.portfolio-tab').forEach(t => {
+          t.className = 'portfolio-tab py-1.5 px-1 rounded-lg text-slate-600 hover:text-slate-900 transition text-center truncate';
+        });
+        btn.className = 'portfolio-tab py-1.5 px-1 rounded-lg bg-white text-indigo-700 shadow-sm transition text-center truncate';
         currentPortfolioTab = btn.dataset.ptab;
         render();
       });
@@ -1031,8 +1509,10 @@
 
     document.querySelectorAll('.filter-tab').forEach(tab => {
       tab.addEventListener('click', () => {
-        document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('bg-white', 'text-slate-900', 'shadow-sm'));
-        tab.classList.add('bg-white', 'text-slate-900', 'shadow-sm');
+        document.querySelectorAll('.filter-tab').forEach(t => {
+          t.className = 'filter-tab px-2.5 py-1 rounded-md text-slate-600 hover:text-slate-900 transition shrink-0';
+        });
+        tab.className = 'filter-tab px-2.5 py-1 rounded-md bg-white text-slate-900 shadow-sm transition shrink-0';
         currentFilter = tab.dataset.filter;
         render();
       });
@@ -1042,6 +1522,7 @@
     document.getElementById('ownerFilterSelect').addEventListener('change', render);
     document.getElementById('sortSelect').addEventListener('change', render);
 
+    // 초기 실행
     initSupabaseSync();
   </script>
 </body>
