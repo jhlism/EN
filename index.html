@@ -12,10 +12,11 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
   <!-- ========================================================================= -->
-  <!-- ⭐ [초간편 설정] 바로 아래 17번, 18번째 줄의 작은따옴표('') 사이에 키를 넣으세요! ⭐ -->
+  <!-- ⭐ [초간편 설정] 17, 18번째 줄의 작은따옴표('') 사이에 키를 넣어주세요! ⭐ -->
+  <!-- 주의: URL 끝에 /rest/v1 이나 슬래시(/)를 붙이지 마세요. 예: https://xxxx.supabase.co -->
   <!-- ========================================================================= -->
   <script>
-    window.DEFAULT_SUPABASE_URL = 'https://zcirreplmjqplnbqpwwz.supabase.co/; // 👈 [17행] Project URL (예: 'https://xxxxxx.supabase.co')
+    window.DEFAULT_SUPABASE_URL = 'https://zcirreplmjqplnbqpwwz.supabase.co'; // 👈 [17행] Project URL (예: 'https://xxxxxx.supabase.co')
     window.DEFAULT_SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpjaXJyZXBsbWpxcGxuYnFwd3d6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI3MzUzNTgsImV4cCI6MjEwODMxMTM1OH0.fhP0eb5b728k9ERO1rCl-V2pLeveN47yN75oc-YeqIU'; // 👈 [18행] anon public 키 (예: 'eyJhbGciOiJIUzI1NiIsInR5cCI6...')
   </script>
   <!-- ========================================================================= -->
@@ -265,6 +266,7 @@
         <div>
           <label class="block font-semibold text-slate-700 mb-1">1. Project URL *</label>
           <input type="url" id="cfgSupabaseUrl" required placeholder="https://xxxxxx.supabase.co" class="w-full px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none" />
+          <p class="text-[10px] text-slate-400 mt-1">※ 주의: 뒤에 /rest/v1 또는 슬래시(/)를 붙이지 마세요.</p>
         </div>
 
         <div>
@@ -509,6 +511,34 @@
     document.getElementById('currentDateDisplay').textContent = 
       `오늘(${currentMonth}월 ${currentDay}일) 기준 계좌별 출금 스케줄`;
 
+    // URL 및 Key 자동 정제 함수 (뒤에 /rest/v1 또는 슬래시가 붙어도 자동 보정)
+    function cleanSupabaseUrl(rawUrl) {
+      if (!rawUrl) return '';
+      let str = rawUrl.trim().replace(/^['"]|['"]$/g, '');
+      try {
+        // 혹시 대시보드 URL(https://supabase.com/dashboard/project/xxxx)을 넣은 경우 자동 파싱
+        if (str.includes('/project/')) {
+          const parts = str.split('/project/');
+          if (parts[1]) {
+            const ref = parts[1].split('/')[0].split('?')[0];
+            if (ref) return `https://${ref}.supabase.co`;
+          }
+        }
+        const parsed = new URL(str.startsWith('http') ? str : `https://${str}`);
+        if (parsed.hostname.endsWith('supabase.co')) {
+          return `${parsed.protocol}//${parsed.hostname}`;
+        }
+        return str.replace(/\/rest\/v1\/?$/i, '').replace(/\/+$/, '');
+      } catch (e) {
+        return str.replace(/\/rest\/v1\/?$/i, '').replace(/\/+$/, '');
+      }
+    }
+
+    function cleanSupabaseKey(rawKey) {
+      if (!rawKey) return '';
+      return rawKey.trim().replace(/^['"]|['"]$/g, '');
+    }
+
     // DB 컬럼(snake_case) <-> 앱 상태(camelCase) 변환기
     function mapFromDB(row) {
       return {
@@ -554,9 +584,12 @@
         const defaultUrl = (window.DEFAULT_SUPABASE_URL || '').trim();
         const defaultKey = (window.DEFAULT_SUPABASE_KEY || '').trim();
 
-        const url = (defaultUrl !== '') ? defaultUrl : (saved.url || '');
-        const key = (defaultKey !== '') ? defaultKey : (saved.key || '');
-        return { url, key };
+        const rawUrl = (defaultUrl !== '') ? defaultUrl : (saved.url || '');
+        const rawKey = (defaultKey !== '') ? defaultKey : (saved.key || '');
+        return {
+          url: cleanSupabaseUrl(rawUrl),
+          key: cleanSupabaseKey(rawKey)
+        };
       } catch (e) {
         return { url: '', key: '' };
       }
@@ -657,7 +690,11 @@
 
       } catch (err) {
         console.error('Supabase Sync Error:', err);
-        updateSyncUI('disconnected', `연결 오류: ${err.message || '설정을 확인하세요'}`);
+        let errorMsg = err.message || '설정을 확인하세요';
+        if (errorMsg.includes('Invalid path')) {
+          errorMsg = 'URL 경로 오류: Project URL 뒤의 /rest/v1 또는 슬래시(/)를 지우고 https://xxxx.supabase.co 형식만 남겨주세요.';
+        }
+        updateSyncUI('disconnected', `연결 오류: ${errorMsg}`);
         render();
       }
     }
@@ -1301,11 +1338,11 @@
 
     syncConfigForm.addEventListener('submit', async (e) => {
       e.preventDefault();
-      const url = cfgSupabaseUrl.value.trim();
-      const key = cfgSupabaseKey.value.trim();
+      const url = cleanSupabaseUrl(cfgSupabaseUrl.value);
+      const key = cleanSupabaseKey(cfgSupabaseKey.value);
 
       if (!url.startsWith('https://') || !url.includes('.supabase.co')) {
-        alert('올바른 Supabase Project URL 형식이 아닙니다.\n예: https://abcdefghijklmn.supabase.co');
+        alert('올바른 Supabase Project URL 형식이 아닙니다.\n예: https://abcdefghijklmn.supabase.co\n(끝에 /rest/v1 또는 슬래시(/)를 붙이지 마세요)');
         return;
       }
       if (!key.startsWith('eyJ')) {
