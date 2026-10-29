@@ -278,22 +278,41 @@
     <main id="scheduleViewSection" class="hidden space-y-3.5">
       <!-- 2주 vs 4주 뷰 선택 토글 & 상단 컨트롤 바 -->
       <div class="bg-white p-3 rounded-2xl border border-slate-200 shadow-sm space-y-2.5">
-        <div class="flex items-center justify-between gap-2">
+        <div class="flex items-center justify-between gap-2 flex-wrap">
           <!-- 2주 / 4주 토글 버튼 -->
           <div class="inline-flex bg-slate-100 p-0.5 rounded-xl border border-slate-200/80">
-            <button type="button" id="btnWeeks2" class="px-3 py-1.5 rounded-lg text-xs font-bold transition bg-white text-rose-600 shadow-sm flex items-center gap-1">
-              <span>● 2주간 (14일)</span>
+            <button type="button" id="btnWeeks2" class="px-2.5 py-1.5 rounded-lg text-xs font-bold transition bg-white text-rose-600 shadow-sm flex items-center gap-1">
+              <span>● 2주간</span>
             </button>
-            <button type="button" id="btnWeeks4" class="px-3 py-1.5 rounded-lg text-xs font-semibold transition text-slate-600 hover:text-slate-900 flex items-center gap-1">
-              <span>○ 4주간 (28일)</span>
+            <button type="button" id="btnWeeks4" class="px-2.5 py-1.5 rounded-lg text-xs font-semibold transition text-slate-600 hover:text-slate-900 flex items-center gap-1">
+              <span>○ 4주간</span>
             </button>
           </div>
 
-          <!-- 새 일정 추가 버튼 -->
-          <button type="button" id="openAddScheduleBtn" class="bg-rose-500 hover:bg-rose-600 text-white text-xs font-bold px-3 py-1.5 rounded-xl flex items-center gap-1.5 shadow-sm transition">
-            <i data-lucide="plus" class="w-3.5 h-3.5"></i>
-            <span>일정 추가</span>
-          </button>
+          <!-- 주차 이동 네비게이션 (< 이전 주 / 오늘 / 다음 주 >) -->
+          <div class="inline-flex items-center gap-1 bg-slate-100/90 p-0.5 rounded-xl border border-slate-200/80 text-xs">
+            <button type="button" id="btnPrevWeek" class="p-1 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-white transition" title="이전 주차 보기">
+              <i data-lucide="chevron-left" class="w-3.5 h-3.5"></i>
+            </button>
+            <button type="button" id="btnCurrentWeek" class="px-2 py-1 rounded-lg text-[11px] font-bold text-slate-700 hover:bg-white transition" title="오늘 주차로 돌아가기">
+              <span id="weekNavRangeText">이번 주</span>
+            </button>
+            <button type="button" id="btnNextWeek" class="p-1 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-white transition" title="다음 주차 보기">
+              <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
+            </button>
+          </div>
+
+          <!-- 액션 버튼들 (지난 일정 모아보기 & 일정 추가) -->
+          <div class="flex items-center gap-1.5 ml-auto">
+            <button type="button" id="openPastSchedulesBtn" class="bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 text-xs font-bold px-2.5 py-1.5 rounded-xl flex items-center gap-1 shadow-sm transition">
+              <i data-lucide="history" class="w-3.5 h-3.5 text-indigo-500"></i>
+              <span>지난 일정</span>
+            </button>
+            <button type="button" id="openAddScheduleBtn" class="bg-rose-500 hover:bg-rose-600 text-white text-xs font-bold px-3 py-1.5 rounded-xl flex items-center gap-1.5 shadow-sm transition">
+              <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+              <span>일정 추가</span>
+            </button>
+          </div>
         </div>
 
         <!-- 주체(남편/아내/우리) 빠른 필터 & 현황 브리핑 -->
@@ -363,7 +382,7 @@ drop policy if exists "anon all fixed_expenses" on fixed_expenses;
 create policy "anon all fixed_expenses" on fixed_expenses for all using (true) with check (true);
 alter publication supabase_realtime add table fixed_expenses;
 
--- 2. 부부 일정 테이블
+-- 2. 부부 일정 테이블 (반복 기능 컬럼 포함)
 create table if not exists schedules (
   id text primary key,
   owner text default 'husband',
@@ -371,8 +390,10 @@ create table if not exists schedules (
   date text not null,
   time_slot text default 'ALL_DAY',
   tag text,
+  repeat text default 'NONE',
   created_at timestamp with time zone default now()
 );
+alter table schedules add column if not exists repeat text default 'NONE';
 alter table schedules enable row level security;
 drop policy if exists "anon all schedules" on schedules;
 create policy "anon all schedules" on schedules for all using (true) with check (true);
@@ -666,23 +687,39 @@ alter publication supabase_realtime add table schedules;</pre>
           <input type="hidden" id="schedTimeSlot" value="ALL_DAY" />
         </div>
 
-        <!-- 4. 일정 내용 입력 & 빠른 프리셋 칩 -->
+        <!-- 4. 반복 설정 (선택적) -->
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">반복 설정 (선택) *</label>
+          <div class="grid grid-cols-5 gap-1">
+            <button type="button" data-repeat="NONE" class="repeat-btn py-1.5 rounded-lg border text-[11px] font-bold bg-slate-800 border-slate-800 text-white transition">안 함</button>
+            <button type="button" data-repeat="WEEKLY" class="repeat-btn py-1.5 rounded-lg border text-[11px] font-medium bg-white border-slate-200 text-slate-600 hover:bg-slate-50 transition">매주</button>
+            <button type="button" data-repeat="BIWEEKLY" class="repeat-btn py-1.5 rounded-lg border text-[11px] font-medium bg-white border-slate-200 text-slate-600 hover:bg-slate-50 transition">격주(2주)</button>
+            <button type="button" data-repeat="MONTHLY" class="repeat-btn py-1.5 rounded-lg border text-[11px] font-medium bg-white border-slate-200 text-slate-600 hover:bg-slate-50 transition">매월</button>
+            <button type="button" data-repeat="YEARLY" class="repeat-btn py-1.5 rounded-lg border text-[11px] font-medium bg-white border-slate-200 text-slate-600 hover:bg-slate-50 transition">매년</button>
+          </div>
+          <input type="hidden" id="schedRepeat" value="NONE" />
+        </div>
+
+        <!-- 5. 일정 내용 입력 & 사용자 정의 빠른 키워드 -->
         <div>
           <label class="block font-semibold text-slate-700 mb-1">일정 내용 *</label>
           <input type="text" id="schedTitle" required placeholder="예: 팀 회식, 치과 정기검진, 제주 여행" class="w-full px-3 py-2 border border-slate-200 rounded-lg text-base sm:text-xs focus:ring-2 focus:ring-rose-500 focus:outline-none" />
           
-          <!-- 자주 쓰는 일정 빠른 입력 칩 -->
-          <div class="mt-2">
-            <span class="text-[10px] text-slate-400 block mb-1">빠른 입력 키워드 (터치 시 자동 입력):</span>
-            <div class="flex flex-wrap gap-1">
-              <button type="button" class="sched-quick-tag px-2 py-1 bg-slate-100 hover:bg-rose-50 hover:text-rose-600 text-slate-600 rounded-md text-[10px] font-medium transition" data-tag="야근">야근</button>
-              <button type="button" class="sched-quick-tag px-2 py-1 bg-slate-100 hover:bg-rose-50 hover:text-rose-600 text-slate-600 rounded-md text-[10px] font-medium transition" data-tag="회식 🍺">회식 🍺</button>
-              <button type="button" class="sched-quick-tag px-2 py-1 bg-slate-100 hover:bg-rose-50 hover:text-rose-600 text-slate-600 rounded-md text-[10px] font-medium transition" data-tag="병원 🏥">병원 🏥</button>
-              <button type="button" class="sched-quick-tag px-2 py-1 bg-slate-100 hover:bg-rose-50 hover:text-rose-600 text-slate-600 rounded-md text-[10px] font-medium transition" data-tag="출장 🚅">출장 🚅</button>
-              <button type="button" class="sched-quick-tag px-2 py-1 bg-slate-100 hover:bg-rose-50 hover:text-rose-600 text-slate-600 rounded-md text-[10px] font-medium transition" data-tag="운동 🏃">운동 🏃</button>
-              <button type="button" class="sched-quick-tag px-2 py-1 bg-slate-100 hover:bg-rose-50 hover:text-rose-600 text-slate-600 rounded-md text-[10px] font-medium transition" data-tag="약속 ☕">약속 ☕</button>
-              <button type="button" class="sched-quick-tag px-2 py-1 bg-slate-100 hover:bg-rose-50 hover:text-rose-600 text-slate-600 rounded-md text-[10px] font-medium transition" data-tag="경조사 💐">경조사 💐</button>
-              <button type="button" class="sched-quick-tag px-2 py-1 bg-slate-100 hover:bg-rose-50 hover:text-rose-600 text-slate-600 rounded-md text-[10px] font-medium transition" data-tag="여행 🏕️">여행 🏕️</button>
+          <!-- 커스텀 키워드 추가/삭제 영역 -->
+          <div class="mt-2.5 p-2 bg-slate-50 rounded-xl border border-slate-100 space-y-2">
+            <div class="flex items-center justify-between">
+              <span class="text-[10px] text-slate-500 font-semibold">⚡ 빠른 입력 키워드 (터치 시 자동 입력)</span>
+            </div>
+            
+            <!-- 태그 리스트 -->
+            <div id="quickTagList" class="flex flex-wrap gap-1"></div>
+
+            <!-- 새 키워드 직접 추가 폼 -->
+            <div class="flex items-center gap-1.5 pt-1 border-t border-slate-200/60">
+              <input type="text" id="newTagInput" placeholder="새 키워드 입력 (예: 필라테스, 분리수거)" class="flex-1 px-2 py-1 bg-white border border-slate-200 rounded-lg text-[11px] focus:outline-none focus:ring-1 focus:ring-rose-400" />
+              <button type="button" id="addNewTagBtn" class="px-2.5 py-1 bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold rounded-lg text-[11px] border border-rose-200 transition shrink-0">
+                + 추가
+              </button>
             </div>
           </div>
         </div>
@@ -695,12 +732,60 @@ alter publication supabase_realtime add table schedules;</pre>
     </div>
   </div>
 
+  <!-- ========================================================================= -->
+  <!-- [모달 5] ⭐ 지난 일정 모아보기 & 검색 아카이브 모달 ⭐ -->
+  <!-- ========================================================================= -->
+  <div id="pastSchedulesModal" class="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-md w-full p-5 shadow-xl max-h-[90vh] flex flex-col">
+      <div class="flex justify-between items-center mb-2.5 shrink-0">
+        <div class="flex items-center gap-1.5">
+          <i data-lucide="history" class="w-5 h-5 text-indigo-600"></i>
+          <div>
+            <h3 class="text-base font-bold text-slate-900">지난 일정 아카이브</h3>
+            <p class="text-[10px] text-slate-400">지나간 일정들이 안전하게 증적·보관되어 있습니다.</p>
+          </div>
+        </div>
+        <button id="closePastSchedulesModalBtn" type="button" class="text-slate-400 hover:text-slate-600 p-1">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <!-- 검색 & 주체 필터 바 -->
+      <div class="space-y-2 py-2 shrink-0 border-y border-slate-100 text-xs">
+        <div class="relative">
+          <i data-lucide="search" class="w-3.5 h-3.5 absolute left-2.5 top-2.5 text-slate-400"></i>
+          <input type="text" id="pastScheduleSearchInput" placeholder="지난 일정명, 키워드 검색" class="w-full pl-8 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none" />
+        </div>
+        <div class="flex items-center justify-between gap-1">
+          <div class="flex items-center gap-1">
+            <button type="button" data-pastfilter="all" class="past-filter-btn px-2 py-1 rounded-lg text-[11px] font-bold bg-slate-800 text-white transition">전체</button>
+            <button type="button" data-pastfilter="husband" class="past-filter-btn px-2 py-1 rounded-lg text-[11px] font-medium bg-slate-100 text-slate-600 hover:bg-slate-200 transition">🔵 남편</button>
+            <button type="button" data-pastfilter="wife" class="past-filter-btn px-2 py-1 rounded-lg text-[11px] font-medium bg-slate-100 text-slate-600 hover:bg-slate-200 transition">🔴 아내</button>
+            <button type="button" data-pastfilter="both" class="past-filter-btn px-2 py-1 rounded-lg text-[11px] font-medium bg-slate-100 text-slate-600 hover:bg-slate-200 transition">🟣 우리</button>
+          </div>
+          <span id="pastScheduleCountText" class="text-[11px] text-indigo-600 font-bold shrink-0">총 0건</span>
+        </div>
+      </div>
+
+      <!-- 지난 일정 목록 스크롤 영역 -->
+      <div id="pastSchedulesList" class="overflow-y-auto space-y-2 py-3 flex-1 text-xs"></div>
+
+      <!-- 모달 닫기 버튼 -->
+      <div class="pt-2 shrink-0 border-t border-slate-100">
+        <button type="button" id="closePastModalBottomBtn" class="w-full py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-medium transition text-xs">
+          닫기
+        </button>
+      </div>
+    </div>
+  </div>
+
   <script>
     const $ = id => document.getElementById(id);
 
     const CONFIG_STORAGE_KEY = 'budget_supabase_config';
     const EXPENSES_STORAGE_KEY = 'fixed_expenses_v4';
     const SCHEDULES_STORAGE_KEY = 'couple_schedules_v1';
+    const QUICK_TAGS_STORAGE_KEY = 'couple_quick_tags_v1';
     const MIGRATED_FLAG_KEY = 'budget_cloud_migrated_v4';
     const HISTORY_STORAGE_PREFIX = 'budget_frequent_';
 
@@ -712,6 +797,16 @@ alter publication supabase_realtime add table schedules;</pre>
     let cloudSupportsOwnerColumn = true;
     let pendingDeleteId = null;
     let pendingDeleteTimer = null;
+
+    // 기본 빠른 입력 키워드 프리셋
+    const DEFAULT_TAGS = ['야근', '회식 🍺', '병원 🏥', '출장 🚅', '운동 🏃', '약속 ☕', '경조사 💐', '여행 🏕️'];
+    let quickTags = [];
+    try {
+      const savedTags = localStorage.getItem(QUICK_TAGS_STORAGE_KEY);
+      quickTags = savedTags ? JSON.parse(savedTags) : [...DEFAULT_TAGS];
+    } catch (e) {
+      quickTags = [...DEFAULT_TAGS];
+    }
 
     // 1. 고정지출 데이터 복원
     let rawExpenses = localStorage.getItem(EXPENSES_STORAGE_KEY) || localStorage.getItem('fixed_expenses_v3');
@@ -741,6 +836,8 @@ alter publication supabase_realtime add table schedules;</pre>
     // 일정 뷰 상태
     let currentScheduleWeeks = 2; // 2 or 4
     let currentScheduleFilter = 'all'; // 'all' | 'husband' | 'wife' | 'both'
+    let scheduleWeekOffset = 0; // 0: 이번 주 기준, -1: 1주 전, +1: 1주 후
+    let pastScheduleFilter = 'all';
     let pendingScheduleDeleteId = null;
     let pendingScheduleDeleteTimer = null;
 
@@ -878,7 +975,7 @@ alter publication supabase_realtime add table schedules;</pre>
       return payload;
     }
 
-    // DB <-> 일정 매핑
+    // DB <-> 일정 매핑 (repeat 컬럼 지원)
     function mapScheduleFromDB(row) {
       return {
         id: String(row.id),
@@ -887,6 +984,7 @@ alter publication supabase_realtime add table schedules;</pre>
         date: row.date || todayYMD,
         timeSlot: row.time_slot || 'ALL_DAY', // 'ALL_DAY', 'MORNING', 'AFTERNOON', 'EVENING'
         tag: row.tag || null,
+        repeat: row.repeat || 'NONE', // 'NONE', 'WEEKLY', 'BIWEEKLY', 'MONTHLY', 'YEARLY'
         createdAt: row.created_at || new Date().toISOString()
       };
     }
@@ -898,7 +996,8 @@ alter publication supabase_realtime add table schedules;</pre>
         title: item.title,
         date: item.date,
         time_slot: item.timeSlot || 'ALL_DAY',
-        tag: item.tag || null
+        tag: item.tag || null,
+        repeat: item.repeat || 'NONE'
       };
     }
 
@@ -1742,7 +1841,60 @@ alter publication supabase_realtime add table schedules;</pre>
       both: { label: '우리', cls: 'bg-purple-100 text-purple-800 border-purple-200' },
     };
 
+    const REPEAT_CONFIG = {
+      NONE: '',
+      WEEKLY: '🔁 매주',
+      BIWEEKLY: '🔁 격주',
+      MONTHLY: '🔁 매월',
+      YEARLY: '🎂 매년'
+    };
+
     const DAY_NAMES = ['일', '월', '화', '수', '목', '금', '토'];
+
+    // 날짜 및 반복 규칙 매칭 검사 함수
+    function isScheduleActiveOnDate(schedule, targetYMD, targetDateObj) {
+      if (!schedule.date) return false;
+      // 시작일보다 과거인 날짜는 표시하지 않음
+      if (targetYMD < schedule.date) return false;
+
+      const repeatMode = schedule.repeat || 'NONE';
+      if (repeatMode === 'NONE') {
+        return schedule.date === targetYMD;
+      }
+
+      const [sYear, sMonth, sDay] = schedule.date.split('-').map(Number);
+      const startDate = new Date(sYear, sMonth - 1, sDay);
+
+      if (repeatMode === 'WEEKLY') {
+        // 매주: 요일이 같으면 매칭
+        return targetDateObj.getDay() === startDate.getDay();
+      }
+
+      if (repeatMode === 'BIWEEKLY') {
+        // 격주: 요일이 같고, 일수 차이가 14의 배수여야 함
+        if (targetDateObj.getDay() !== startDate.getDay()) return false;
+        const diffMs = targetDateObj.getTime() - startDate.getTime();
+        const diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24));
+        return (diffDays % 14) === 0;
+      }
+
+      if (repeatMode === 'MONTHLY') {
+        // 매월: 일(day)이 같거나, 말일 예외 보정
+        const targetDay = targetDateObj.getDate();
+        if (targetDay === sDay) return true;
+        // 원래 31일인데 이번달이 30일까지라면 말일에 노출
+        const lastDayOfTargetMonth = new Date(targetDateObj.getFullYear(), targetDateObj.getMonth() + 1, 0).getDate();
+        if (sDay > lastDayOfTargetMonth && targetDay === lastDayOfTargetMonth) return true;
+        return false;
+      }
+
+      if (repeatMode === 'YEARLY') {
+        // 매년: 월과 일이 같으면 매칭
+        return (targetDateObj.getMonth() + 1 === sMonth) && (targetDateObj.getDate() === sDay);
+      }
+
+      return false;
+    }
 
     // 2주 또는 4주 일정 타임라인 생성
     function renderScheduleSection() {
@@ -1750,12 +1902,28 @@ alter publication supabase_realtime add table schedules;</pre>
       const emptyState = $('scheduleEmptyState');
       $('badgeScheduleCount').textContent = schedules.length;
 
-      // 이번 주 월요일 기준 날짜 계산
+      // 이번 주 월요일 기준 날짜 계산 (scheduleWeekOffset 반영)
       const curr = new Date(today);
       const dayOfWeek = curr.getDay(); // 0(일) ~ 6(토)
       const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
       const startMonday = new Date(curr);
-      startMonday.setDate(curr.getDate() + mondayOffset);
+      startMonday.setDate(curr.getDate() + mondayOffset + (scheduleWeekOffset * 7));
+
+      // 주차 네비게이션 텍스트 갱신
+      const navBtn = $('btnCurrentWeek');
+      const navText = $('weekNavRangeText');
+      if (navBtn && navText) {
+        if (scheduleWeekOffset === 0) {
+          navText.textContent = '이번 주';
+          navBtn.className = 'px-2 py-1 rounded-lg text-[11px] font-bold text-slate-700 hover:bg-white transition';
+        } else if (scheduleWeekOffset < 0) {
+          navText.textContent = `${Math.abs(scheduleWeekOffset)}주 전 (오늘 복귀)`;
+          navBtn.className = 'px-2 py-1 rounded-lg text-[11px] font-bold bg-rose-50 text-rose-600 border border-rose-200 transition';
+        } else {
+          navText.textContent = `${scheduleWeekOffset}주 뒤 (오늘 복귀)`;
+          navBtn.className = 'px-2 py-1 rounded-lg text-[11px] font-bold bg-indigo-50 text-indigo-600 border border-indigo-200 transition';
+        }
+      }
 
       const totalWeeks = currentScheduleWeeks; // 2 or 4
       const totalDays = totalWeeks * 7;
@@ -1771,13 +1939,12 @@ alter publication supabase_realtime add table schedules;</pre>
           dateObj.setDate(startMonday.getDate() + (w * 7) + d);
           const ymd = formatDateYMD(dateObj);
           
-          // 해당 일자의 스케줄 필터링
-          let daySchedules = schedules.filter(s => s.date === ymd);
+          let daySchedules = schedules.filter(s => isScheduleActiveOnDate(s, ymd, dateObj));
+
           if (currentScheduleFilter !== 'all') {
             daySchedules = daySchedules.filter(s => s.owner === currentScheduleFilter);
           }
 
-          // 시간대별 정렬: ALL_DAY -> MORNING -> AFTERNOON -> EVENING
           const slotOrder = { ALL_DAY: 1, MORNING: 2, AFTERNOON: 3, EVENING: 4 };
           daySchedules.sort((a, b) => (slotOrder[a.timeSlot] || 1) - (slotOrder[b.timeSlot] || 1));
 
@@ -1809,11 +1976,13 @@ alter publication supabase_realtime add table schedules;</pre>
       }
       emptyState.classList.add('hidden');
 
-      const weekTitles = ['이번 주 (1주차)', '다음 주 (2주차)', '다다음 주 (3주차)', '4주차 일정'];
+      const weekTitles = scheduleWeekOffset === 0
+        ? ['이번 주 (1주차)', '다음 주 (2주차)', '다다음 주 (3주차)', '4주차 일정']
+        : weeksData.map((w, idx) => `${w[0].month}.${w[0].dayOfMonth} ~ ${w[6].month}.${w[6].dayOfMonth} (${idx + 1}주차)`);
 
       container.innerHTML = weeksData.map((week, wIdx) => {
         const weekItemsCount = week.reduce((acc, d) => acc + d.items.length, 0);
-        const isCurrentWeek = wIdx === 0;
+        const isCurrentWeek = scheduleWeekOffset === 0 && wIdx === 0;
 
         const daysHtml = week.map(d => {
           const hasItems = d.items.length > 0;
@@ -1830,12 +1999,17 @@ alter publication supabase_realtime add table schedules;</pre>
             const itemsHtml = d.items.map(item => {
               const ownerInfo = OWNER_CONFIG[item.owner] || OWNER_CONFIG.husband;
               const slotInfo = TIME_SLOT_CONFIG[item.timeSlot] || TIME_SLOT_CONFIG.ALL_DAY;
+              const repeatLabel = REPEAT_CONFIG[item.repeat || 'NONE'];
+              const repeatBadge = repeatLabel
+                ? `<span class="text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-amber-50 text-amber-700 border border-amber-200 shrink-0">${repeatLabel}</span>`
+                : '';
 
               return `
                 <div class="flex items-center justify-between p-2 rounded-xl bg-white border border-slate-200/90 shadow-sm hover:border-rose-200 transition">
                   <div class="flex items-center gap-1.5 min-w-0">
                     <span class="text-[10px] font-bold px-1.5 py-0.5 rounded-md border ${ownerInfo.cls} shrink-0">${ownerInfo.label}</span>
                     <span class="text-[10px] font-semibold px-1.5 py-0.5 rounded-md border ${slotInfo.cls} shrink-0">${slotInfo.label}</span>
+                    ${repeatBadge}
                     <span class="text-xs font-bold text-slate-800 truncate">${escapeHtml(item.title)}</span>
                   </div>
                   <div class="flex items-center gap-1 shrink-0 ml-2">
@@ -1865,7 +2039,6 @@ alter publication supabase_realtime add table schedules;</pre>
               </div>
             `;
           } else {
-            // 일정이 없는 날 (미니멀하게 1줄 처리로 세로 스크롤 최적화)
             return `
               <div data-ymd="${d.ymd}" class="quick-add-on-date-btn cursor-pointer py-1.5 px-2.5 rounded-lg border border-dashed border-slate-200/90 hover:border-rose-300 hover:bg-rose-50/30 flex items-center justify-between text-[11px] transition">
                 <div class="flex items-center gap-1 font-medium ${dayColor}">
@@ -1897,10 +2070,114 @@ alter publication supabase_realtime add table schedules;</pre>
       lucide.createIcons();
     }
 
+    // =========================================================================
+    // ⭐ 지난 일정 아카이브 렌더링 로직 ⭐
+    // =========================================================================
+    function getDaysAgoText(dateStr) {
+      if (!dateStr) return '';
+      const [y, m, d] = dateStr.split('-').map(Number);
+      const target = new Date(y, m - 1, d);
+      const todayZero = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+      const diffDays = Math.round((todayZero.getTime() - target.getTime()) / (1000 * 60 * 60 * 24));
+      if (diffDays === 0) return '오늘';
+      if (diffDays === 1) return '어제 (1일 전)';
+      if (diffDays < 7) return `${diffDays}일 전`;
+      if (diffDays < 30) return `${Math.floor(diffDays / 7)}주 전 (${diffDays}일 전)`;
+      if (diffDays < 365) return `${Math.floor(diffDays / 30)}개월 전`;
+      return `${Math.floor(diffDays / 365)}년 전`;
+    }
+
+    function renderPastSchedules() {
+      const listEl = $('pastSchedulesList');
+      const countEl = $('pastScheduleCountText');
+      if (!listEl) return;
+
+      const searchKey = ($('pastScheduleSearchInput')?.value || '').trim().toLowerCase();
+
+      // 오늘 이전 일정을 내림차순(최근 지난 일정이 맨 위로) 정렬
+      let pastList = schedules.filter(s => {
+        if (!s.date || s.date >= todayYMD) return false;
+        if (pastScheduleFilter !== 'all' && s.owner !== pastScheduleFilter) return false;
+        if (searchKey) {
+          const target = `${s.title} ${s.date} ${s.tag || ''}`.toLowerCase();
+          return target.includes(searchKey);
+        }
+        return true;
+      });
+
+      pastList.sort((a, b) => b.date.localeCompare(a.date));
+
+      if (countEl) countEl.textContent = `총 ${pastList.length}건`;
+
+      if (pastList.length === 0) {
+        listEl.innerHTML = `
+          <div class="text-center py-12 text-slate-400">
+            <i data-lucide="archive" class="w-8 h-8 mx-auto text-slate-300 mb-2"></i>
+            <p class="font-medium text-xs">조건에 맞는 지난 일정이 없습니다.</p>
+          </div>
+        `;
+        lucide.createIcons();
+        return;
+      }
+
+      listEl.innerHTML = pastList.map(item => {
+        const ownerInfo = OWNER_CONFIG[item.owner] || OWNER_CONFIG.husband;
+        const slotInfo = TIME_SLOT_CONFIG[item.timeSlot] || TIME_SLOT_CONFIG.ALL_DAY;
+        const repeatLabel = REPEAT_CONFIG[item.repeat || 'NONE'];
+        const daysAgo = getDaysAgoText(item.date);
+
+        return `
+          <div class="p-2.5 rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-white hover:border-indigo-200 transition space-y-1.5">
+            <div class="flex items-center justify-between text-xs">
+              <div class="flex items-center gap-1.5">
+                <span class="font-bold text-slate-800">${item.date}</span>
+                <span class="text-[10px] font-semibold text-slate-500 bg-slate-200/70 px-1.5 py-0.5 rounded">${daysAgo}</span>
+                ${repeatLabel ? `<span class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-200">${repeatLabel}</span>` : ''}
+              </div>
+              <div class="flex items-center gap-1">
+                <button type="button" data-schedid="${item.id}" class="copy-past-sched-btn text-[10px] font-bold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 px-2 py-0.5 rounded-md border border-indigo-200 transition" title="오늘 날짜로 새 일정 등록">
+                  + 오늘로 복사
+                </button>
+                <button type="button" data-schedid="${item.id}" class="edit-schedule-btn text-slate-400 hover:text-indigo-600 p-1" title="수정">
+                  <i data-lucide="settings-2" class="w-3.5 h-3.5"></i>
+                </button>
+                <button type="button" data-schedid="${item.id}" class="delete-schedule-btn text-slate-400 hover:text-rose-600 p-1" title="삭제">
+                  <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                </button>
+              </div>
+            </div>
+            <div class="flex items-center gap-1.5 min-w-0">
+              <span class="text-[10px] font-bold px-1.5 py-0.5 rounded border ${ownerInfo.cls} shrink-0">${ownerInfo.label}</span>
+              <span class="text-[10px] font-semibold px-1.5 py-0.5 rounded border ${slotInfo.cls} shrink-0">${slotInfo.label}</span>
+              <span class="font-bold text-slate-800 truncate">${escapeHtml(item.title)}</span>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      lucide.createIcons();
+    }
+
     function renderAll() {
       renderExpenseSection();
       renderScheduleSection();
     }
+
+    // 주차 이동 네비게이션 버튼 이벤트 바인딩
+    $('btnPrevWeek').addEventListener('click', () => {
+      scheduleWeekOffset -= 1;
+      renderScheduleSection();
+    });
+
+    $('btnNextWeek').addEventListener('click', () => {
+      scheduleWeekOffset += 1;
+      renderScheduleSection();
+    });
+
+    $('btnCurrentWeek').addEventListener('click', () => {
+      scheduleWeekOffset = 0;
+      renderScheduleSection();
+    });
 
     // 메인 탭 전환 (고정지출 vs 부부 일정)
     $('mainTabExpense').addEventListener('click', () => {
@@ -1948,9 +2225,158 @@ alter publication supabase_realtime add table schedules;</pre>
     });
 
     // =========================================================================
-    // ⭐ 부부 일정 모달 컨트롤러 ⭐
+    // ⭐ 부부 일정 모달 컨트롤러 & 커스텀 태그 관리 ⭐
     // =========================================================================
     const scheduleModal = $('scheduleModal');
+    const pastSchedulesModal = $('pastSchedulesModal');
+
+    function openPastSchedulesModal() {
+      pastScheduleFilter = 'all';
+      if ($('pastScheduleSearchInput')) $('pastScheduleSearchInput').value = '';
+      document.querySelectorAll('.past-filter-btn').forEach(b => {
+        if (b.dataset.pastfilter === 'all') {
+          b.className = 'past-filter-btn px-2 py-1 rounded-lg text-[11px] font-bold bg-slate-800 text-white transition';
+        } else {
+          b.className = 'past-filter-btn px-2 py-1 rounded-lg text-[11px] font-medium bg-slate-100 text-slate-600 hover:bg-slate-200 transition';
+        }
+      });
+      renderPastSchedules();
+      pastSchedulesModal.classList.remove('hidden');
+      document.body.classList.add('overflow-hidden');
+      lucide.createIcons();
+    }
+
+    function closePastSchedulesModal() {
+      pastSchedulesModal.classList.add('hidden');
+      document.body.classList.remove('overflow-hidden');
+    }
+
+    $('openPastSchedulesBtn').addEventListener('click', openPastSchedulesModal);
+    $('closePastSchedulesModalBtn').addEventListener('click', closePastSchedulesModal);
+    $('closePastModalBottomBtn').addEventListener('click', closePastSchedulesModal);
+
+    $('pastScheduleSearchInput').addEventListener('input', renderPastSchedules);
+
+    document.querySelectorAll('.past-filter-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.past-filter-btn').forEach(b => {
+          b.className = 'past-filter-btn px-2 py-1 rounded-lg text-[11px] font-medium bg-slate-100 text-slate-600 hover:bg-slate-200 transition';
+        });
+        btn.className = 'past-filter-btn px-2 py-1 rounded-lg text-[11px] font-bold bg-slate-800 text-white transition';
+        pastScheduleFilter = btn.dataset.pastfilter;
+        renderPastSchedules();
+      });
+    });
+
+    // 지난 일정 모달 내 클릭 이벤트 위임 (+ 오늘로 복사, 수정, 삭제)
+    $('pastSchedulesList').addEventListener('click', async (e) => {
+      const copyBtn = e.target.closest('.copy-past-sched-btn');
+      if (copyBtn) {
+        const id = copyBtn.dataset.schedid;
+        const it = schedules.find(s => s.id === id);
+        if (it) {
+          closePastSchedulesModal();
+          openScheduleModal(null, todayYMD);
+          $('schedTitle').value = it.title;
+          setScheduleOwner(it.owner || 'husband');
+          setScheduleTimeSlot(it.timeSlot || 'ALL_DAY');
+          setScheduleRepeat('NONE');
+          showToast(`'${it.title}' 일정을 오늘 날짜로 불러왔습니다.`);
+        }
+        return;
+      }
+
+      const editBtn = e.target.closest('.edit-schedule-btn');
+      if (editBtn) {
+        closePastSchedulesModal();
+        openScheduleModal(editBtn.dataset.schedid);
+        return;
+      }
+
+      const delBtn = e.target.closest('.delete-schedule-btn');
+      if (delBtn) {
+        const id = delBtn.dataset.schedid;
+        const it = schedules.find(s => s.id === id);
+
+        if (pendingScheduleDeleteId !== id) {
+          pendingScheduleDeleteId = id;
+          delBtn.classList.add('text-rose-600', 'bg-rose-50', 'rounded');
+          showToast(`'${it ? it.title : '일정'}' 삭제: 쓰레기통을 한 번 더 누르면 삭제됩니다.`);
+          if (pendingScheduleDeleteTimer) clearTimeout(pendingScheduleDeleteTimer);
+          pendingScheduleDeleteTimer = setTimeout(() => {
+            pendingScheduleDeleteId = null;
+            renderPastSchedules();
+          }, 3000);
+          return;
+        }
+
+        pendingScheduleDeleteId = null;
+        if (pendingScheduleDeleteTimer) clearTimeout(pendingScheduleDeleteTimer);
+        await syncDeleteSchedule(id);
+        renderPastSchedules();
+        showToast('지난 일정이 삭제되었습니다.');
+      }
+    });
+
+    function renderQuickTags() {
+      const container = $('quickTagList');
+      if (!container) return;
+      container.innerHTML = '';
+
+      quickTags.forEach((tag, idx) => {
+        const wrap = document.createElement('div');
+        wrap.className = 'inline-flex items-center bg-white border border-slate-200 rounded-md shadow-xs text-[10px] text-slate-700 font-medium overflow-hidden hover:border-rose-300';
+
+        const tagBtn = document.createElement('button');
+        tagBtn.type = 'button';
+        tagBtn.className = 'px-2 py-1 hover:bg-rose-50 hover:text-rose-600 transition';
+        tagBtn.textContent = tag;
+        tagBtn.addEventListener('click', () => {
+          const cur = $('schedTitle').value.trim();
+          $('schedTitle').value = cur ? `${cur} (${tag})` : tag;
+          $('schedTitle').focus();
+        });
+
+        const delBtn = document.createElement('button');
+        delBtn.type = 'button';
+        delBtn.className = 'px-1 py-1 text-slate-300 hover:text-rose-600 hover:bg-rose-50 border-l border-slate-100 transition';
+        delBtn.title = '키워드 삭제';
+        delBtn.innerHTML = '&times;';
+        delBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          quickTags.splice(idx, 1);
+          localStorage.setItem(QUICK_TAGS_STORAGE_KEY, JSON.stringify(quickTags));
+          renderQuickTags();
+        });
+
+        wrap.appendChild(tagBtn);
+        wrap.appendChild(delBtn);
+        container.appendChild(wrap);
+      });
+    }
+
+    // 새 빠른 입력 태그 등록
+    $('addNewTagBtn').addEventListener('click', () => {
+      const input = $('newTagInput');
+      const val = input.value.trim();
+      if (!val) return;
+      if (quickTags.includes(val)) {
+        showToast('이미 존재하는 키워드입니다.');
+        return;
+      }
+      quickTags.push(val);
+      localStorage.setItem(QUICK_TAGS_STORAGE_KEY, JSON.stringify(quickTags));
+      input.value = '';
+      renderQuickTags();
+      showToast(`'${val}' 키워드가 추가되었습니다!`);
+    });
+
+    $('newTagInput').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        $('addNewTagBtn').click();
+      }
+    });
 
     function setScheduleOwner(ownerVal) {
       $('schedOwner').value = ownerVal;
@@ -1977,6 +2403,17 @@ alter publication supabase_realtime add table schedules;</pre>
       });
     }
 
+    function setScheduleRepeat(repeatVal) {
+      $('schedRepeat').value = repeatVal;
+      document.querySelectorAll('.repeat-btn').forEach(b => {
+        if (b.dataset.repeat === repeatVal) {
+          b.className = 'repeat-btn py-1.5 rounded-lg border text-[11px] font-bold bg-slate-800 border-slate-800 text-white transition shadow-sm';
+        } else {
+          b.className = 'repeat-btn py-1.5 rounded-lg border text-[11px] font-medium bg-white border-slate-200 text-slate-600 hover:bg-slate-50 transition';
+        }
+      });
+    }
+
     document.querySelectorAll('.sowner-btn').forEach(btn => {
       btn.addEventListener('click', () => setScheduleOwner(btn.dataset.sowner));
     });
@@ -1985,18 +2422,15 @@ alter publication supabase_realtime add table schedules;</pre>
       btn.addEventListener('click', () => setScheduleTimeSlot(btn.dataset.slot));
     });
 
-    document.querySelectorAll('.sched-quick-tag').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const tag = btn.dataset.tag;
-        const cur = $('schedTitle').value.trim();
-        $('schedTitle').value = cur ? `${cur} (${tag})` : tag;
-        $('schedTitle').focus();
-      });
+    document.querySelectorAll('.repeat-btn').forEach(btn => {
+      btn.addEventListener('click', () => setScheduleRepeat(btn.dataset.repeat));
     });
 
     function openScheduleModal(editId = null, prefilledDate = null) {
       $('scheduleForm').reset();
       $('schedId').value = '';
+      $('newTagInput').value = '';
+      renderQuickTags();
 
       if (editId) {
         const item = schedules.find(s => s.id === editId);
@@ -2007,11 +2441,13 @@ alter publication supabase_realtime add table schedules;</pre>
         $('schedDate').value = item.date;
         setScheduleOwner(item.owner || 'husband');
         setScheduleTimeSlot(item.timeSlot || 'ALL_DAY');
+        setScheduleRepeat(item.repeat || 'NONE');
       } else {
         $('scheduleModalTitle').textContent = '새 부부 일정 등록';
         $('schedDate').value = prefilledDate || todayYMD;
         setScheduleOwner('husband');
         setScheduleTimeSlot('ALL_DAY'); // 종일이 기본값
+        setScheduleRepeat('NONE'); // 반복 없음이 기본값
       }
 
       scheduleModal.classList.remove('hidden');
@@ -2036,6 +2472,7 @@ alter publication supabase_realtime add table schedules;</pre>
       const date = $('schedDate').value;
       const owner = $('schedOwner').value || 'husband';
       const timeSlot = $('schedTimeSlot').value || 'ALL_DAY';
+      const repeat = $('schedRepeat').value || 'NONE';
 
       if (!title || !date) {
         showToast('⚠️ 일정 내용과 날짜를 입력해 주세요.');
@@ -2048,11 +2485,12 @@ alter publication supabase_realtime add table schedules;</pre>
         date,
         owner,
         timeSlot,
+        repeat,
         createdAt: new Date().toISOString()
       };
 
       await syncSaveSchedule(scheduleObj);
-      showToast('일정이 저장되었습니다! 📅');
+      showToast(repeat !== 'NONE' ? `반복 일정이 등록되었습니다! 🔁` : '일정이 저장되었습니다! 📅');
       closeScheduleModal();
     });
 
@@ -2447,8 +2885,7 @@ alter publication supabase_realtime add table schedules;</pre>
       syncModal.classList.add('hidden');
       showToast('연동이 해제되었습니다.');
     });
-
-    [modal, syncModal, quickAmtModal, scheduleModal].forEach(m => {
+    [modal, syncModal, quickAmtModal, scheduleModal, pastSchedulesModal].forEach(m => {
       m.addEventListener('click', (e) => {
         if (e.target === m) {
           m.classList.add('hidden');
@@ -2462,6 +2899,7 @@ alter publication supabase_realtime add table schedules;</pre>
         closeModal();
         closeQuickAmtModal();
         closeScheduleModal();
+        closePastSchedulesModal();
         syncModal.classList.add('hidden');
       }
     });
