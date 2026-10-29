@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>고정지출 & 저축 플래너 Pro</title>
+  <title>고정지출 & 부부 일정 플래너 Pro</title>
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Lucide Icons -->
@@ -30,7 +30,7 @@
     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
   </style>
 </head>
-<body class="bg-slate-50 text-slate-800 min-h-screen pb-16 antialiased">
+<body class="bg-slate-50 text-slate-800 min-h-screen pb-20 antialiased">
   <!-- 토스트 알림 컨테이너 -->
   <div id="toast" class="fixed top-4 left-1/2 -translate-x-1/2 z-[100] transition-all duration-300 opacity-0 pointer-events-none translate-y-[-10px]">
     <div class="bg-slate-900/95 backdrop-blur text-white text-xs px-4 py-2.5 rounded-full shadow-lg flex items-center gap-2 whitespace-nowrap">
@@ -45,20 +45,20 @@
     <header class="flex justify-between items-start gap-2 mb-3">
       <div class="min-w-0">
         <h1 class="text-lg sm:text-xl font-bold text-slate-900 tracking-tight flex items-center gap-1.5 whitespace-nowrap">
-          <i data-lucide="wallet-cards" class="w-5 h-5 sm:w-6 sm:h-6 text-indigo-600 shrink-0"></i>
-          <span>고정지출 플래너 Pro</span>
+          <i data-lucide="heart-handshake" class="w-5 h-5 sm:w-6 sm:h-6 text-rose-500 shrink-0"></i>
+          <span>부부 생활 플래너 Pro</span>
         </h1>
-        <p class="text-[11px] sm:text-xs text-slate-500 mt-0.5 whitespace-nowrap" id="currentDateDisplay">오늘 기준 출금 스케줄</p>
+        <p class="text-[11px] sm:text-xs text-slate-500 mt-0.5 whitespace-nowrap" id="currentDateDisplay">오늘 기준 일정 & 가계 스케줄</p>
       </div>
       <div class="flex items-center gap-1 shrink-0">
         <button id="openSyncModalBtn" type="button" class="text-[11px] sm:text-xs px-2.5 py-1.5 rounded-lg font-semibold flex items-center gap-1.5 shadow-sm transition bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 whitespace-nowrap shrink-0">
           <span id="headerSyncDot" class="w-2 h-2 rounded-full bg-amber-400 shrink-0"></span>
           <span id="headerSyncText">클라우드 연동</span>
         </button>
-        <button id="exportBtn" type="button" title="데이터 백업" class="p-1.5 bg-white border border-slate-200 text-slate-600 hover:bg-slate-100 rounded-lg shadow-sm shrink-0">
+        <button id="exportBtn" type="button" title="통합 백업" class="p-1.5 bg-white border border-slate-200 text-slate-600 hover:bg-slate-100 rounded-lg shadow-sm shrink-0">
           <i data-lucide="download" class="w-4 h-4"></i>
         </button>
-        <label for="importFile" title="데이터 복원" class="p-1.5 bg-white border border-slate-200 text-slate-600 hover:bg-slate-100 rounded-lg shadow-sm cursor-pointer shrink-0">
+        <label for="importFile" title="통합 복원" class="p-1.5 bg-white border border-slate-200 text-slate-600 hover:bg-slate-100 rounded-lg shadow-sm cursor-pointer shrink-0">
           <i data-lucide="upload" class="w-4 h-4"></i>
         </label>
         <input type="file" id="importFile" class="hidden" accept=".json" />
@@ -66,14 +66,14 @@
     </header>
 
     <!-- 실시간 동기화 상태 안내 배너 -->
-    <div id="syncStatusBanner" class="mb-4 p-2.5 rounded-xl border flex items-center justify-between text-xs bg-amber-50 border-amber-200 text-amber-900">
+    <div id="syncStatusBanner" class="mb-3.5 p-2.5 rounded-xl border flex items-center justify-between text-xs bg-amber-50 border-amber-200 text-amber-900">
       <div class="flex items-center gap-2 min-w-0">
         <span id="bannerSyncIconWrap" class="shrink-0 flex items-center">
           <i data-lucide="cloud-off" class="w-4 h-4 text-amber-600"></i>
         </span>
         <div class="min-w-0">
           <span id="bannerSyncTitle" class="font-bold block truncate">현재 개별 폰 저장 모드 (동기화 미연동)</span>
-          <span id="bannerSyncDesc" class="text-[11px] block text-amber-700 mt-0.5 line-clamp-2">아내분과 실시간으로 공유하려면 연동 설정을 확인해 주세요.</span>
+          <span id="bannerSyncDesc" class="text-[11px] block text-amber-700 mt-0.5 line-clamp-2">지출과 일정을 배우자와 실시간 공유하려면 연동 설정을 확인해 주세요.</span>
         </div>
       </div>
       <div class="flex items-center gap-1 shrink-0 ml-2">
@@ -86,175 +86,244 @@
       </div>
     </div>
 
-    <!-- 상단 핵심 대시보드 카드 영역 (4분할) -->
-    <section class="grid grid-cols-2 gap-3 mb-4">
-      <!-- 1. 순수 고정지출 -->
-      <div class="bg-white p-3.5 rounded-xl border border-rose-100 shadow-sm">
-        <div class="flex items-center justify-between">
-          <span class="text-xs font-bold text-rose-600 flex items-center gap-1">
-            <span class="w-2 h-2 rounded-full bg-rose-500"></span>순수 고정지출
-          </span>
-          <span class="text-[10px] bg-rose-50 text-rose-600 px-1.5 py-0.5 rounded font-semibold" id="expenseRateBadge">비중 0%</span>
-        </div>
-        <div class="mt-2">
-          <span class="text-lg font-bold text-slate-900" id="monthlyExpense">0원</span>
-          <span class="text-[11px] text-slate-500 block mt-0.5" id="annualExpense">연 0원</span>
-          <span class="text-[10px] text-rose-600 font-medium block mt-1 bg-rose-50/70 px-1.5 py-0.5 rounded w-fit" id="remainingExpenseText">남은 출금 0원</span>
-        </div>
-      </div>
+    <!-- ⭐ 메인 뷰 스위처 (고정지출 vs 부부 일정) ⭐ -->
+    <nav class="grid grid-cols-2 gap-1.5 p-1 bg-slate-200/80 rounded-2xl mb-4">
+      <button type="button" id="mainTabExpense" class="py-2.5 px-3 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition bg-white text-indigo-700 shadow-sm">
+        <i data-lucide="wallet-cards" class="w-4 h-4"></i>
+        <span>고정지출 & 저축</span>
+        <span id="badgeExpenseCount" class="text-[10px] bg-indigo-50 text-indigo-600 px-1.5 py-0.5 rounded-full font-semibold">0</span>
+      </button>
+      <button type="button" id="mainTabSchedule" class="py-2.5 px-3 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition text-slate-600 hover:text-slate-900">
+        <i data-lucide="calendar-heart" class="w-4 h-4 text-rose-500"></i>
+        <span>부부 일정공유</span>
+        <span id="badgeScheduleCount" class="text-[10px] bg-rose-50 text-rose-600 px-1.5 py-0.5 rounded-full font-semibold">0</span>
+      </button>
+    </nav>
 
-      <!-- 2. 저축 및 투자 -->
-      <div class="bg-white p-3.5 rounded-xl border border-blue-100 shadow-sm">
-        <div class="flex items-center justify-between">
-          <span class="text-xs font-bold text-blue-600 flex items-center gap-1">
-            <span class="w-2 h-2 rounded-full bg-blue-500"></span>저축 · 자산 형성
-          </span>
-          <span class="text-[10px] bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded font-semibold" id="savingsRate">비중 0%</span>
-        </div>
-        <div class="mt-2">
-          <span class="text-lg font-bold text-slate-900" id="monthlySavings">0원</span>
-          <span class="text-[11px] text-slate-500 block mt-0.5" id="annualSavings">연 0원</span>
-          <span class="text-[10px] text-blue-600 font-medium block mt-1 bg-blue-50/70 px-1.5 py-0.5 rounded w-fit" id="remainingSavingsText">남은 이체 0원</span>
-        </div>
-      </div>
-
-      <!-- 3. 월 총 고정자금 합계 -->
-      <div class="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
-        <div>
+    <!-- ========================================================================= -->
+    <!-- 1️⃣ [VIEW] 고정지출 & 저축 뷰 영역 (기존 기능) -->
+    <!-- ========================================================================= -->
+    <main id="expenseViewSection" class="space-y-4">
+      <!-- 상단 핵심 대시보드 카드 영역 (4분할) -->
+      <section class="grid grid-cols-2 gap-3">
+        <!-- 1. 순수 고정지출 -->
+        <div class="bg-white p-3.5 rounded-xl border border-rose-100 shadow-sm">
           <div class="flex items-center justify-between">
-            <span class="text-xs font-bold text-slate-700">월 총 고정자금</span>
-            <span class="text-[10px] text-slate-500 font-semibold" id="totalCountBadge">활성 0건</span>
+            <span class="text-xs font-bold text-rose-600 flex items-center gap-1">
+              <span class="w-2 h-2 rounded-full bg-rose-500"></span>순수 고정지출
+            </span>
+            <span class="text-[10px] bg-rose-50 text-rose-600 px-1.5 py-0.5 rounded font-semibold" id="expenseRateBadge">비중 0%</span>
+          </div>
+          <div class="mt-2">
+            <span class="text-lg font-bold text-slate-900" id="monthlyExpense">0원</span>
+            <span class="text-[11px] text-slate-500 block mt-0.5" id="annualExpense">연 0원</span>
+            <span class="text-[10px] text-rose-600 font-medium block mt-1 bg-rose-50/70 px-1.5 py-0.5 rounded w-fit" id="remainingExpenseText">남은 출금 0원</span>
+          </div>
+        </div>
+
+        <!-- 2. 저축 및 투자 -->
+        <div class="bg-white p-3.5 rounded-xl border border-blue-100 shadow-sm">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold text-blue-600 flex items-center gap-1">
+              <span class="w-2 h-2 rounded-full bg-blue-500"></span>저축 · 자산 형성
+            </span>
+            <span class="text-[10px] bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded font-semibold" id="savingsRate">비중 0%</span>
+          </div>
+          <div class="mt-2">
+            <span class="text-lg font-bold text-slate-900" id="monthlySavings">0원</span>
+            <span class="text-[11px] text-slate-500 block mt-0.5" id="annualSavings">연 0원</span>
+            <span class="text-[10px] text-blue-600 font-medium block mt-1 bg-blue-50/70 px-1.5 py-0.5 rounded w-fit" id="remainingSavingsText">남은 이체 0원</span>
+          </div>
+        </div>
+
+        <!-- 3. 월 총 고정자금 합계 -->
+        <div class="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-bold text-slate-700">월 총 고정자금</span>
+              <span class="text-[10px] text-slate-500 font-semibold" id="totalCountBadge">활성 0건</span>
+            </div>
+            <div class="mt-1.5">
+              <span class="text-lg font-bold text-indigo-700" id="totalMonthly">0원</span>
+              <span class="text-[11px] text-slate-500 block mt-0.5" id="totalAnnual">연 0원</span>
+            </div>
           </div>
           <div class="mt-1.5">
-            <span class="text-lg font-bold text-indigo-700" id="totalMonthly">0원</span>
-            <span class="text-[11px] text-slate-500 block mt-0.5" id="totalAnnual">연 0원</span>
+            <span class="text-[10px] text-slate-400 block truncate" id="variableCountNotice">변동비 항목 0건 포함</span>
           </div>
         </div>
-        <div class="mt-1.5">
-          <span class="text-[10px] text-slate-400 block truncate" id="variableCountNotice">변동비 항목 0건 포함</span>
-        </div>
-      </div>
 
-      <!-- 4. 오늘 이후 이번 달 남은 출금 예정액 -->
-      <div class="bg-gradient-to-br from-indigo-50/90 to-slate-50 p-3.5 rounded-xl border border-indigo-200 shadow-sm flex flex-col justify-between">
-        <div>
-          <div class="flex items-center justify-between">
-            <span class="text-xs font-bold text-indigo-950">오늘 이후 남은 출금</span>
-            <i data-lucide="calendar-clock" class="w-3.5 h-3.5 text-indigo-600"></i>
+        <!-- 4. 오늘 이후 이번 달 남은 출금 예정액 -->
+        <div class="bg-gradient-to-br from-indigo-50/90 to-slate-50 p-3.5 rounded-xl border border-indigo-200 shadow-sm flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-bold text-indigo-950">오늘 이후 남은 출금</span>
+              <i data-lucide="calendar-clock" class="w-3.5 h-3.5 text-indigo-600"></i>
+            </div>
+            <div class="mt-1.5">
+              <span class="text-lg font-bold text-rose-600" id="todayRemainingAmount">0원</span>
+              <span class="text-[11px] text-slate-600 block mt-0.5" id="todayRemainingCount">오늘~말일 0건</span>
+            </div>
           </div>
           <div class="mt-1.5">
-            <span class="text-lg font-bold text-rose-600" id="todayRemainingAmount">0원</span>
-            <span class="text-[11px] text-slate-600 block mt-0.5" id="todayRemainingCount">오늘~말일 0건</span>
+            <span class="text-[10px] text-indigo-700 font-semibold block truncate" id="nextPaymentNotice">다음 출금 일정 없음</span>
           </div>
         </div>
-        <div class="mt-1.5">
-          <span class="text-[10px] text-indigo-700 font-semibold block truncate" id="nextPaymentNotice">다음 출금 일정 없음</span>
-        </div>
-      </div>
-    </section>
+      </section>
 
-    <!-- 계좌별 · 일자별 필요 자금 브리핑 -->
-    <section class="bg-white rounded-2xl border border-slate-200 p-4 mb-5 shadow-sm">
-      <div class="flex items-center justify-between mb-3">
-        <div class="flex items-center gap-1.5">
-          <i data-lucide="landmark" class="w-4 h-4 text-indigo-600"></i>
-          <h2 class="text-xs font-bold text-slate-800">계좌별 · 날짜별 잔액 준비 가이드</h2>
-        </div>
-        <span class="text-[10px] text-slate-400">만기 종료 항목 자동 제외</span>
-      </div>
-
-      <!-- 지출 vs 저축 비율 바 -->
-      <div class="mb-4 bg-slate-50 p-3 rounded-xl border border-slate-100">
-        <div class="flex justify-between items-center text-[11px] mb-1.5">
+      <!-- 계좌별 · 일자별 필요 자금 브리핑 -->
+      <section class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm">
+        <div class="flex items-center justify-between mb-3">
           <div class="flex items-center gap-1.5">
-            <span class="w-2.5 h-2.5 rounded-sm bg-rose-500 inline-block"></span>
-            <span class="font-semibold text-slate-700">순수지출</span>
-            <span class="text-rose-600 font-bold" id="barExpenseText">0원 (0%)</span>
+            <i data-lucide="landmark" class="w-4 h-4 text-indigo-600"></i>
+            <h2 class="text-xs font-bold text-slate-800">계좌별 · 날짜별 잔액 준비 가이드</h2>
           </div>
-          <div class="flex items-center gap-1.5">
-            <span class="text-blue-600 font-bold" id="barSavingsText">0원 (0%)</span>
-            <span class="font-semibold text-slate-700">저축·적금</span>
-            <span class="w-2.5 h-2.5 rounded-sm bg-blue-500 inline-block"></span>
+          <span class="text-[10px] text-slate-400">만기 종료 항목 자동 제외</span>
+        </div>
+
+        <!-- 지출 vs 저축 비율 바 -->
+        <div class="mb-4 bg-slate-50 p-3 rounded-xl border border-slate-100">
+          <div class="flex justify-between items-center text-[11px] mb-1.5">
+            <div class="flex items-center gap-1.5">
+              <span class="w-2.5 h-2.5 rounded-sm bg-rose-500 inline-block"></span>
+              <span class="font-semibold text-slate-700">순수지출</span>
+              <span class="text-rose-600 font-bold" id="barExpenseText">0원 (0%)</span>
+            </div>
+            <div class="flex items-center gap-1.5">
+              <span class="text-blue-600 font-bold" id="barSavingsText">0원 (0%)</span>
+              <span class="font-semibold text-slate-700">저축·적금</span>
+              <span class="w-2.5 h-2.5 rounded-sm bg-blue-500 inline-block"></span>
+            </div>
+          </div>
+          <div class="w-full h-2.5 bg-slate-200 rounded-full overflow-hidden flex">
+            <div id="barExpenseFill" class="h-full bg-rose-500 transition-all duration-300" style="width: 50%"></div>
+            <div id="barSavingsFill" class="h-full bg-blue-500 transition-all duration-300" style="width: 50%"></div>
           </div>
         </div>
-        <div class="w-full h-2.5 bg-slate-200 rounded-full overflow-hidden flex">
-          <div id="barExpenseFill" class="h-full bg-rose-500 transition-all duration-300" style="width: 50%"></div>
-          <div id="barSavingsFill" class="h-full bg-blue-500 transition-all duration-300" style="width: 50%"></div>
+
+        <!-- 분석 탭 버튼 -->
+        <div class="grid grid-cols-4 gap-1 bg-slate-100 p-1 rounded-xl text-[11px] font-semibold mb-3.5">
+          <button type="button" data-ptab="account" class="portfolio-tab py-1.5 px-1 rounded-lg bg-white text-indigo-700 shadow-sm transition text-center whitespace-nowrap">
+            🏦 계좌별
+          </button>
+          <button type="button" data-ptab="schedule" class="portfolio-tab py-1.5 px-1 rounded-lg text-slate-600 hover:text-slate-900 transition text-center whitespace-nowrap">
+            📅 스케줄
+          </button>
+          <button type="button" data-ptab="category" class="portfolio-tab py-1.5 px-1 rounded-lg text-slate-600 hover:text-slate-900 transition text-center whitespace-nowrap">
+            📊 카테고리
+          </button>
+          <button type="button" data-ptab="maturity" class="portfolio-tab py-1.5 px-1 rounded-lg text-slate-600 hover:text-slate-900 transition text-center whitespace-nowrap">
+            ⏳ 약정·만기
+          </button>
+        </div>
+
+        <div id="portfolioContent" class="space-y-2.5 text-xs"></div>
+      </section>
+
+      <!-- 리스트 필터 / 탭 / 등록 버튼 -->
+      <div class="flex flex-col gap-2.5">
+        <div class="flex items-center justify-between gap-2">
+          <div class="inline-flex bg-slate-200/80 p-0.5 rounded-lg text-xs font-medium overflow-x-auto no-scrollbar max-w-full">
+            <button type="button" data-filter="all" class="filter-tab px-2.5 py-1 rounded-md bg-white text-slate-900 shadow-sm transition shrink-0">전체</button>
+            <button type="button" data-filter="upcoming" class="filter-tab px-2.5 py-1 rounded-md text-slate-600 hover:text-slate-900 transition shrink-0">오늘 이후 출금</button>
+            <button type="button" data-filter="expense" class="filter-tab px-2.5 py-1 rounded-md text-slate-600 hover:text-slate-900 transition shrink-0">순수지출</button>
+            <button type="button" data-filter="savings" class="filter-tab px-2.5 py-1 rounded-md text-slate-600 hover:text-slate-900 transition shrink-0">저축·적금</button>
+            <button type="button" data-filter="variable" class="filter-tab px-2.5 py-1 rounded-md text-slate-600 hover:text-slate-900 transition shrink-0">⚡변동비</button>
+          </div>
+
+          <button id="openAddModalBtn" type="button" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold px-3 py-1.5 rounded-lg flex items-center gap-1 shadow-sm transition shrink-0">
+            <i data-lucide="plus" class="w-3.5 h-3.5"></i> 추가
+          </button>
+        </div>
+
+        <!-- 검색 및 명의 필터, 정렬 -->
+        <div class="flex gap-2">
+          <div class="relative flex-1">
+            <i data-lucide="search" class="w-3.5 h-3.5 absolute left-2.5 top-2.5 text-slate-400"></i>
+            <input type="text" id="searchInput" placeholder="항목명, 계좌명, 카드, 메모 검색" class="w-full pl-8 pr-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none" />
+          </div>
+          <select id="ownerFilterSelect" class="bg-white border border-slate-200 rounded-lg px-2 py-1.5 text-xs text-slate-700 focus:outline-none">
+            <option value="all">👤 명의: 전체</option>
+            <option value="남편">남편</option>
+            <option value="아내">아내</option>
+            <option value="공동">공동</option>
+          </select>
+          <select id="sortSelect" class="bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs text-slate-700 focus:outline-none">
+            <option value="day">결제일순</option>
+            <option value="upcomingFirst">다가오는 출금순</option>
+            <option value="amountDesc">금액 높은순</option>
+            <option value="amountAsc">금액 낮은순</option>
+          </select>
         </div>
       </div>
 
-      <!-- 분석 탭 버튼 -->
-      <div class="grid grid-cols-4 gap-1 bg-slate-100 p-1 rounded-xl text-[11px] font-semibold mb-3.5">
-        <button type="button" data-ptab="account" class="portfolio-tab py-1.5 px-1 rounded-lg bg-white text-indigo-700 shadow-sm transition text-center whitespace-nowrap">
-          🏦 계좌별
-        </button>
-        <button type="button" data-ptab="schedule" class="portfolio-tab py-1.5 px-1 rounded-lg text-slate-600 hover:text-slate-900 transition text-center whitespace-nowrap">
-          📅 스케줄
-        </button>
-        <button type="button" data-ptab="category" class="portfolio-tab py-1.5 px-1 rounded-lg text-slate-600 hover:text-slate-900 transition text-center whitespace-nowrap">
-          📊 카테고리
-        </button>
-        <button type="button" data-ptab="maturity" class="portfolio-tab py-1.5 px-1 rounded-lg text-slate-600 hover:text-slate-900 transition text-center whitespace-nowrap">
-          ⏳ 약정·만기
-        </button>
+      <div class="flex items-center justify-between text-[11px] text-slate-400 px-1">
+        <span>💡 <b class="text-slate-600">금액</b>을 터치하면 이번 달 고지서 금액을 즉시 수정할 수 있습니다.</span>
+        <span id="filteredCountText">표시 0건</span>
       </div>
 
-      <div id="portfolioContent" class="space-y-2.5 text-xs"></div>
-    </section>
+      <!-- 고정지출 리스트 -->
+      <div id="expenseList" class="space-y-2"></div>
 
-    <!-- 리스트 필터 / 탭 / 등록 버튼 -->
-    <div class="flex flex-col gap-2.5 mb-3">
-      <div class="flex items-center justify-between gap-2">
-        <div class="inline-flex bg-slate-200/80 p-0.5 rounded-lg text-xs font-medium overflow-x-auto no-scrollbar max-w-full">
-          <button type="button" data-filter="all" class="filter-tab px-2.5 py-1 rounded-md bg-white text-slate-900 shadow-sm transition shrink-0">전체</button>
-          <button type="button" data-filter="upcoming" class="filter-tab px-2.5 py-1 rounded-md text-slate-600 hover:text-slate-900 transition shrink-0">오늘 이후 출금</button>
-          <button type="button" data-filter="expense" class="filter-tab px-2.5 py-1 rounded-md text-slate-600 hover:text-slate-900 transition shrink-0">순수지출</button>
-          <button type="button" data-filter="savings" class="filter-tab px-2.5 py-1 rounded-md text-slate-600 hover:text-slate-900 transition shrink-0">저축·적금</button>
-          <button type="button" data-filter="variable" class="filter-tab px-2.5 py-1 rounded-md text-slate-600 hover:text-slate-900 transition shrink-0">⚡변동비</button>
+      <!-- 빈 상태 안내 -->
+      <div id="emptyState" class="hidden text-center py-12 bg-white rounded-xl border border-dashed border-slate-200">
+        <i data-lucide="inbox" class="w-10 h-10 mx-auto text-slate-300 mb-2"></i>
+        <p class="text-xs text-slate-500">조건에 맞는 고정 지출 항목이 없습니다.</p>
+      </div>
+    </main>
+
+    <!-- ========================================================================= -->
+    <!-- 2️⃣ [VIEW] 부부 2주 / 4주 일정공유 뷰 영역 (신규 기능) -->
+    <!-- ========================================================================= -->
+    <main id="scheduleViewSection" class="hidden space-y-3.5">
+      <!-- 2주 vs 4주 뷰 선택 토글 & 상단 컨트롤 바 -->
+      <div class="bg-white p-3 rounded-2xl border border-slate-200 shadow-sm space-y-2.5">
+        <div class="flex items-center justify-between gap-2">
+          <!-- 2주 / 4주 토글 버튼 -->
+          <div class="inline-flex bg-slate-100 p-0.5 rounded-xl border border-slate-200/80">
+            <button type="button" id="btnWeeks2" class="px-3 py-1.5 rounded-lg text-xs font-bold transition bg-white text-rose-600 shadow-sm flex items-center gap-1">
+              <span>● 2주간 (14일)</span>
+            </button>
+            <button type="button" id="btnWeeks4" class="px-3 py-1.5 rounded-lg text-xs font-semibold transition text-slate-600 hover:text-slate-900 flex items-center gap-1">
+              <span>○ 4주간 (28일)</span>
+            </button>
+          </div>
+
+          <!-- 새 일정 추가 버튼 -->
+          <button type="button" id="openAddScheduleBtn" class="bg-rose-500 hover:bg-rose-600 text-white text-xs font-bold px-3 py-1.5 rounded-xl flex items-center gap-1.5 shadow-sm transition">
+            <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+            <span>일정 추가</span>
+          </button>
         </div>
 
-        <button id="openAddModalBtn" type="button" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold px-3 py-1.5 rounded-lg flex items-center gap-1 shadow-sm transition shrink-0">
-          <i data-lucide="plus" class="w-3.5 h-3.5"></i> 추가
-        </button>
-      </div>
-
-      <!-- 검색 및 명의 필터, 정렬 -->
-      <div class="flex gap-2">
-        <div class="relative flex-1">
-          <i data-lucide="search" class="w-3.5 h-3.5 absolute left-2.5 top-2.5 text-slate-400"></i>
-          <input type="text" id="searchInput" placeholder="항목명, 계좌명, 카드, 메모 검색" class="w-full pl-8 pr-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none" />
+        <!-- 주체(남편/아내/우리) 빠른 필터 & 현황 브리핑 -->
+        <div class="flex items-center justify-between gap-1 pt-1 border-t border-slate-100 text-xs">
+          <div class="flex items-center gap-1">
+            <button type="button" data-sfilter="all" class="sched-filter-btn px-2 py-1 rounded-lg text-[11px] font-bold bg-slate-800 text-white transition">전체</button>
+            <button type="button" data-sfilter="husband" class="sched-filter-btn px-2 py-1 rounded-lg text-[11px] font-medium bg-slate-100 text-slate-600 hover:bg-blue-50 hover:text-blue-700 transition">🔵 남편</button>
+            <button type="button" data-sfilter="wife" class="sched-filter-btn px-2 py-1 rounded-lg text-[11px] font-medium bg-slate-100 text-slate-600 hover:bg-rose-50 hover:text-rose-700 transition">🔴 아내</button>
+            <button type="button" data-sfilter="both" class="sched-filter-btn px-2 py-1 rounded-lg text-[11px] font-medium bg-slate-100 text-slate-600 hover:bg-purple-50 hover:text-purple-700 transition">🟣 우리</button>
+          </div>
+          <span id="schedulePeriodSummary" class="text-[11px] text-slate-500 font-medium truncate">2주간 0건의 일정</span>
         </div>
-        <select id="ownerFilterSelect" class="bg-white border border-slate-200 rounded-lg px-2 py-1.5 text-xs text-slate-700 focus:outline-none">
-          <option value="all">👤 명의: 전체</option>
-          <option value="남편">남편</option>
-          <option value="아내">아내</option>
-          <option value="공동">공동</option>
-        </select>
-        <select id="sortSelect" class="bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs text-slate-700 focus:outline-none">
-          <option value="day">결제일순</option>
-          <option value="upcomingFirst">다가오는 출금순</option>
-          <option value="amountDesc">금액 높은순</option>
-          <option value="amountAsc">금액 낮은순</option>
-        </select>
       </div>
-    </div>
 
-    <div class="flex items-center justify-between text-[11px] text-slate-400 px-1 mb-2">
-      <span>💡 <b class="text-slate-600">금액</b>을 터치하면 이번 달 고지서 금액을 즉시 수정할 수 있습니다.</span>
-      <span id="filteredCountText">표시 0건</span>
-    </div>
+      <!-- 타임라인 렌더링 컨테이너 -->
+      <div id="scheduleTimelineContainer" class="space-y-4"></div>
 
-    <!-- 고정지출 리스트 -->
-    <div id="expenseList" class="space-y-2"></div>
+      <!-- 일정이 전혀 없을 때 빈 상태 -->
+      <div id="scheduleEmptyState" class="hidden text-center py-12 bg-white rounded-2xl border border-dashed border-slate-200">
+        <i data-lucide="calendar-heart" class="w-10 h-10 mx-auto text-rose-300 mb-2"></i>
+        <p class="text-xs text-slate-600 font-bold">선택하신 기간에 등록된 일정이 없습니다.</p>
+        <p class="text-[11px] text-slate-400 mt-0.5">상단의 [일정 추가] 버튼을 눌러 부부 약속을 가볍게 등록해 보세요.</p>
+      </div>
+    </main>
 
-    <!-- 빈 상태 안내 -->
-    <div id="emptyState" class="hidden text-center py-12 bg-white rounded-xl border border-dashed border-slate-200 mt-2">
-      <i data-lucide="inbox" class="w-10 h-10 mx-auto text-slate-300 mb-2"></i>
-      <p class="text-xs text-slate-500">조건에 맞는 고정 지출 항목이 없습니다.</p>
-    </div>
   </div>
 
+  <!-- ========================================================================= -->
   <!-- [모달 1] Supabase 실시간 동기화 설정 모달 -->
+  <!-- ========================================================================= -->
   <div id="syncModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
     <div class="bg-white rounded-2xl max-w-sm w-full p-5 shadow-2xl max-h-[90vh] overflow-y-auto">
       <div class="flex justify-between items-center mb-3">
@@ -267,7 +336,7 @@
         </button>
       </div>
       <p class="text-xs text-slate-600 mb-3 leading-relaxed">
-        Supabase <b>Project URL</b>과 <b>anon public 키</b>로 실시간 동기화를 수행합니다.
+        Supabase <b>Project URL</b>과 <b>anon public 키</b>로 고정지출과 부부 일정을 실시간 동기화합니다.
       </p>
       <form id="syncConfigForm" class="space-y-3 text-xs">
         <div>
@@ -280,19 +349,34 @@
         </div>
 
         <details class="bg-slate-50 p-2.5 rounded-lg border border-slate-200 text-[11px] text-slate-600">
-          <summary class="font-semibold text-slate-700 cursor-pointer select-none">🛠️ Supabase SQL 테이블 설정 코드 보기</summary>
-          <p class="mt-1.5 text-[10px] text-slate-500">테이블이나 Realtime이 설정되지 않았다면 Supabase SQL Editor에서 아래 구문을 1회 실행해 주세요.</p>
-          <pre id="sqlSnippet" class="mt-1.5 p-2 bg-slate-900 text-emerald-300 rounded text-[10px] overflow-x-auto font-mono leading-relaxed">create table if not exists fixed_expenses (
+          <summary class="font-semibold text-slate-700 cursor-pointer select-none">🛠️ Supabase SQL 테이블 설정 코드 (지출 & 일정)</summary>
+          <p class="mt-1.5 text-[10px] text-slate-500">Supabase SQL Editor에서 아래 구문을 1회 실행하시면 지출과 일정 공유 테이블이 모두 준비됩니다.</p>
+          <pre id="sqlSnippet" class="mt-1.5 p-2 bg-slate-900 text-emerald-300 rounded text-[10px] overflow-x-auto font-mono leading-relaxed">-- 1. 고정지출 테이블
+create table if not exists fixed_expenses (
   id text primary key, name text, amount bigint, base_amount bigint,
   is_variable boolean default false, day int, category text, type text,
   payment_method text, payment_detail text, memo text,
   duration_months int, start_year_month text, owner text default '남편'
 );
-alter table fixed_expenses add column if not exists owner text default '남편';
 alter table fixed_expenses enable row level security;
-drop policy if exists "anon all" on fixed_expenses;
-create policy "anon all" on fixed_expenses for all using (true) with check (true);
-alter publication supabase_realtime add table fixed_expenses;</pre>
+drop policy if exists "anon all fixed_expenses" on fixed_expenses;
+create policy "anon all fixed_expenses" on fixed_expenses for all using (true) with check (true);
+alter publication supabase_realtime add table fixed_expenses;
+
+-- 2. 부부 일정 테이블
+create table if not exists schedules (
+  id text primary key,
+  owner text default 'husband',
+  title text not null,
+  date text not null,
+  time_slot text default 'ALL_DAY',
+  tag text,
+  created_at timestamp with time zone default now()
+);
+alter table schedules enable row level security;
+drop policy if exists "anon all schedules" on schedules;
+create policy "anon all schedules" on schedules for all using (true) with check (true);
+alter publication supabase_realtime add table schedules;</pre>
           <button type="button" id="copySqlBtn" class="mt-1.5 w-full py-1 bg-white border border-slate-300 rounded text-[10px] font-semibold text-slate-700 hover:bg-slate-100">SQL 코드 복사하기</button>
         </details>
 
@@ -304,7 +388,9 @@ alter publication supabase_realtime add table fixed_expenses;</pre>
     </div>
   </div>
 
-  <!-- [모달 2] 항목 추가/수정 모달 -->
+  <!-- ========================================================================= -->
+  <!-- [모달 2] 고정지출 항목 추가/수정 모달 -->
+  <!-- ========================================================================= -->
   <div id="itemModal" class="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
     <div class="bg-white rounded-2xl max-w-sm w-full p-5 shadow-xl max-h-[90vh] overflow-y-auto">
       <div class="flex justify-between items-center mb-4">
@@ -396,7 +482,7 @@ alter publication supabase_realtime add table fixed_expenses;</pre>
           </div>
         </div>
 
-        <!-- 결제 수단 & 출금 계좌 상세 (결제수단별 상위 3개 칩 자동 연동) -->
+        <!-- 결제 수단 & 출금 계좌 상세 -->
         <div class="space-y-1.5">
           <div class="grid grid-cols-5 gap-2">
             <div class="col-span-2">
@@ -416,7 +502,6 @@ alter publication supabase_realtime add table fixed_expenses;</pre>
             </div>
           </div>
           <datalist id="paymentDetailDataList"></datalist>
-          <!-- 결제수단별 상위 3개 원터치 선택 영역 -->
           <div id="paymentDetailChipsWrap" class="hidden flex items-center gap-1.5 flex-wrap pt-0.5">
             <span id="paymentMethodChipLabel" class="text-[10px] text-slate-400 font-medium shrink-0">자주 쓰는 항목:</span>
             <div id="paymentDetailChips" class="flex flex-wrap gap-1"></div>
@@ -499,7 +584,9 @@ alter publication supabase_realtime add table fixed_expenses;</pre>
     </div>
   </div>
 
-  <!-- [모달 3] 이번 달 금액 1초 빠른 수정 모달 (모바일 숫자 키패드 & 한글 미리보기 지원) -->
+  <!-- ========================================================================= -->
+  <!-- [모달 3] 이번 달 금액 1초 빠른 수정 모달 -->
+  <!-- ========================================================================= -->
   <div id="quickAmtModal" class="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
     <div class="bg-white rounded-2xl max-w-xs w-full p-5 shadow-xl">
       <div class="flex justify-between items-center mb-2">
@@ -532,35 +619,130 @@ alter publication supabase_realtime add table fixed_expenses;</pre>
     </div>
   </div>
 
+  <!-- ========================================================================= -->
+  <!-- [모달 4] ⭐ 3초 초간단 부부 일정 등록/수정 모달 ⭐ -->
+  <!-- ========================================================================= -->
+  <div id="scheduleModal" class="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-sm w-full p-5 shadow-xl max-h-[90vh] overflow-y-auto">
+      <div class="flex justify-between items-center mb-3">
+        <div class="flex items-center gap-1.5">
+          <i data-lucide="calendar-heart" class="w-5 h-5 text-rose-500"></i>
+          <h3 id="scheduleModalTitle" class="text-base font-bold text-slate-900">새 부부 일정 등록</h3>
+        </div>
+        <button id="closeScheduleModalBtn" type="button" class="text-slate-400 hover:text-slate-600 p-1">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <form id="scheduleForm" class="space-y-3.5 text-xs">
+        <input type="hidden" id="schedId" />
+
+        <!-- 1. 주체 선택 (남편 / 아내 / 우리) -->
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">일정 주체 *</label>
+          <div class="grid grid-cols-3 gap-1.5">
+            <button type="button" data-sowner="husband" class="sowner-btn py-2 rounded-xl border text-xs font-bold bg-blue-50 border-blue-500 text-blue-700 transition">🔵 남편</button>
+            <button type="button" data-sowner="wife" class="sowner-btn py-2 rounded-xl border text-xs font-medium bg-white border-slate-200 text-slate-600 hover:bg-slate-50 transition">🔴 아내</button>
+            <button type="button" data-sowner="both" class="sowner-btn py-2 rounded-xl border text-xs font-medium bg-white border-slate-200 text-slate-600 hover:bg-slate-50 transition">🟣 우리 함께</button>
+          </div>
+          <input type="hidden" id="schedOwner" value="husband" />
+        </div>
+
+        <!-- 2. 날짜 선택 -->
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">날짜 *</label>
+          <input type="date" id="schedDate" required class="w-full px-3 py-2 border border-slate-200 rounded-lg text-xs font-semibold focus:ring-2 focus:ring-rose-500 focus:outline-none" />
+        </div>
+
+        <!-- 3. 시간대 선택 (종일 / 오전 / 오후 / 저녁) -->
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">시간대 (원터치 선택) *</label>
+          <div class="grid grid-cols-4 gap-1">
+            <button type="button" data-slot="ALL_DAY" class="slot-btn py-2 rounded-xl border text-xs font-bold bg-slate-800 border-slate-800 text-white transition">종일(기본)</button>
+            <button type="button" data-slot="MORNING" class="slot-btn py-2 rounded-xl border text-xs font-medium bg-white border-slate-200 text-slate-600 hover:bg-slate-50 transition">오전 ☀️</button>
+            <button type="button" data-slot="AFTERNOON" class="slot-btn py-2 rounded-xl border text-xs font-medium bg-white border-slate-200 text-slate-600 hover:bg-slate-50 transition">오후 ⛅</button>
+            <button type="button" data-slot="EVENING" class="slot-btn py-2 rounded-xl border text-xs font-medium bg-white border-slate-200 text-slate-600 hover:bg-slate-50 transition">저녁 🌙</button>
+          </div>
+          <input type="hidden" id="schedTimeSlot" value="ALL_DAY" />
+        </div>
+
+        <!-- 4. 일정 내용 입력 & 빠른 프리셋 칩 -->
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">일정 내용 *</label>
+          <input type="text" id="schedTitle" required placeholder="예: 팀 회식, 치과 정기검진, 제주 여행" class="w-full px-3 py-2 border border-slate-200 rounded-lg text-base sm:text-xs focus:ring-2 focus:ring-rose-500 focus:outline-none" />
+          
+          <!-- 자주 쓰는 일정 빠른 입력 칩 -->
+          <div class="mt-2">
+            <span class="text-[10px] text-slate-400 block mb-1">빠른 입력 키워드 (터치 시 자동 입력):</span>
+            <div class="flex flex-wrap gap-1">
+              <button type="button" class="sched-quick-tag px-2 py-1 bg-slate-100 hover:bg-rose-50 hover:text-rose-600 text-slate-600 rounded-md text-[10px] font-medium transition" data-tag="야근">야근</button>
+              <button type="button" class="sched-quick-tag px-2 py-1 bg-slate-100 hover:bg-rose-50 hover:text-rose-600 text-slate-600 rounded-md text-[10px] font-medium transition" data-tag="회식 🍺">회식 🍺</button>
+              <button type="button" class="sched-quick-tag px-2 py-1 bg-slate-100 hover:bg-rose-50 hover:text-rose-600 text-slate-600 rounded-md text-[10px] font-medium transition" data-tag="병원 🏥">병원 🏥</button>
+              <button type="button" class="sched-quick-tag px-2 py-1 bg-slate-100 hover:bg-rose-50 hover:text-rose-600 text-slate-600 rounded-md text-[10px] font-medium transition" data-tag="출장 🚅">출장 🚅</button>
+              <button type="button" class="sched-quick-tag px-2 py-1 bg-slate-100 hover:bg-rose-50 hover:text-rose-600 text-slate-600 rounded-md text-[10px] font-medium transition" data-tag="운동 🏃">운동 🏃</button>
+              <button type="button" class="sched-quick-tag px-2 py-1 bg-slate-100 hover:bg-rose-50 hover:text-rose-600 text-slate-600 rounded-md text-[10px] font-medium transition" data-tag="약속 ☕">약속 ☕</button>
+              <button type="button" class="sched-quick-tag px-2 py-1 bg-slate-100 hover:bg-rose-50 hover:text-rose-600 text-slate-600 rounded-md text-[10px] font-medium transition" data-tag="경조사 💐">경조사 💐</button>
+              <button type="button" class="sched-quick-tag px-2 py-1 bg-slate-100 hover:bg-rose-50 hover:text-rose-600 text-slate-600 rounded-md text-[10px] font-medium transition" data-tag="여행 🏕️">여행 🏕️</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex gap-2 pt-2">
+          <button type="button" id="cancelScheduleModalBtn" class="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-medium transition">취소</button>
+          <button type="submit" class="flex-1 py-2.5 bg-rose-500 hover:bg-rose-600 text-white rounded-xl font-bold shadow-sm transition">등록 완료</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <script>
     const $ = id => document.getElementById(id);
 
     const CONFIG_STORAGE_KEY = 'budget_supabase_config';
-    const STORAGE_KEY = 'fixed_expenses_v4';
+    const EXPENSES_STORAGE_KEY = 'fixed_expenses_v4';
+    const SCHEDULES_STORAGE_KEY = 'couple_schedules_v1';
     const MIGRATED_FLAG_KEY = 'budget_cloud_migrated_v4';
     const HISTORY_STORAGE_PREFIX = 'budget_frequent_';
 
     let supabaseClient = null;
     let realtimeChannel = null;
+    let scheduleRealtimeChannel = null;
     let pollingIntervalId = null;
     let isLocalMutating = false;
     let cloudSupportsOwnerColumn = true;
     let pendingDeleteId = null;
     let pendingDeleteTimer = null;
 
-    // 구버전(v3) 데이터가 있고 v4가 비어있다면 자동 승계
-    let rawSaved = localStorage.getItem(STORAGE_KEY) || localStorage.getItem('fixed_expenses_v3');
+    // 1. 고정지출 데이터 복원
+    let rawExpenses = localStorage.getItem(EXPENSES_STORAGE_KEY) || localStorage.getItem('fixed_expenses_v3');
     let expenses = [];
     try {
-      expenses = rawSaved ? JSON.parse(rawSaved) : [];
+      expenses = rawExpenses ? JSON.parse(rawExpenses) : [];
     } catch (e) {
       expenses = [];
     }
 
+    // 2. 부부 일정 데이터 복원
+    let rawSchedules = localStorage.getItem(SCHEDULES_STORAGE_KEY);
+    let schedules = [];
+    try {
+      schedules = rawSchedules ? JSON.parse(rawSchedules) : [];
+    } catch (e) {
+      schedules = [];
+    }
+
+    // 화면 상태
+    let activeMainTab = 'expense'; // 'expense' | 'schedule'
     let currentFilter = 'all';
     let currentPortfolioTab = 'account';
     let currentDurationMode = 'indefinite';
     let isVariable = false;
+
+    // 일정 뷰 상태
+    let currentScheduleWeeks = 2; // 2 or 4
+    let currentScheduleFilter = 'all'; // 'all' | 'husband' | 'wife' | 'both'
+    let pendingScheduleDeleteId = null;
+    let pendingScheduleDeleteTimer = null;
 
     const today = new Date();
     const currentYear = today.getFullYear();
@@ -568,7 +750,17 @@ alter publication supabase_realtime add table fixed_expenses;</pre>
     const currentDay = today.getDate();
     const lastDayOfMonth = new Date(currentYear, currentMonth, 0).getDate();
 
-    $('currentDateDisplay').textContent = `오늘(${currentMonth}월 ${currentDay}일) 기준 계좌별 출금 스케줄`;
+    // YYYY-MM-DD 포맷 도우미
+    function formatDateYMD(d) {
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    }
+
+    const todayYMD = formatDateYMD(today);
+
+    $('currentDateDisplay').textContent = `오늘(${currentMonth}월 ${currentDay}일) 기준 일정 & 가계 스케줄`;
 
     function getEffectiveDay(day) {
       return Math.min(Math.max(Number(day) || 1, 1), lastDayOfMonth);
@@ -617,7 +809,6 @@ alter publication supabase_realtime add table fixed_expenses;</pre>
       if (startYearMonth) {
         const [sYear, sMonth] = startYearMonth.split('-').map(Number);
         const elapsedMonths = (currentYear - sYear) * 12 + (currentMonth - sMonth);
-        // 시작월이 미래인 경우 0회차, 만기 달이 지났으면 완료(isMatured)
         const isMatured = elapsedMonths >= durationMonths;
         const currentRound = elapsedMonths < 0 ? 0 : Math.min(durationMonths, elapsedMonths + 1);
         const remaining = Math.max(0, durationMonths - currentRound);
@@ -632,7 +823,7 @@ alter publication supabase_realtime add table fixed_expenses;</pre>
       return prog ? prog.isMatured : false;
     }
 
-    // DB <-> 로컬 객체 매핑 (구버전 DB에 owner 컬럼이 없을 때도 메모 태그로 안전 호환)
+    // DB <-> 로컬 고정지출 매핑
     function extractOwnerAndMemo(rawOwner, rawMemo) {
       let memo = (rawMemo || '').trim();
       let owner = rawOwner || '';
@@ -644,7 +835,7 @@ alter publication supabase_realtime add table fixed_expenses;</pre>
       return { owner: owner || '남편', memo };
     }
 
-    function mapFromDB(row) {
+    function mapExpenseFromDB(row) {
       const { owner, memo } = extractOwnerAndMemo(row.owner, row.memo);
       return {
         id: String(row.id),
@@ -664,7 +855,7 @@ alter publication supabase_realtime add table fixed_expenses;</pre>
       };
     }
 
-    function mapToDB(item, includeOwnerCol = true) {
+    function mapExpenseToDB(item, includeOwnerCol = true) {
       const cleanMemo = (item.memo || '').replace(/^\[명의:(남편|아내|공동)\]\s*/, '').trim();
       const payload = {
         id: String(item.id),
@@ -687,7 +878,30 @@ alter publication supabase_realtime add table fixed_expenses;</pre>
       return payload;
     }
 
-    // 1. 동기화 설정 조회 (저장값 우선 + disabled 해제 플래그 준수)
+    // DB <-> 일정 매핑
+    function mapScheduleFromDB(row) {
+      return {
+        id: String(row.id),
+        owner: row.owner || 'husband', // 'husband', 'wife', 'both'
+        title: row.title || '일정',
+        date: row.date || todayYMD,
+        timeSlot: row.time_slot || 'ALL_DAY', // 'ALL_DAY', 'MORNING', 'AFTERNOON', 'EVENING'
+        tag: row.tag || null,
+        createdAt: row.created_at || new Date().toISOString()
+      };
+    }
+
+    function mapScheduleToDB(item) {
+      return {
+        id: String(item.id),
+        owner: item.owner || 'husband',
+        title: item.title,
+        date: item.date,
+        time_slot: item.timeSlot || 'ALL_DAY',
+        tag: item.tag || null
+      };
+    }
+
     function getStoredSupabaseConfig() {
       try {
         const saved = JSON.parse(localStorage.getItem(CONFIG_STORAGE_KEY) || '{}');
@@ -715,17 +929,17 @@ alter publication supabase_realtime add table fixed_expenses;</pre>
       const refreshBtn = $('manualRefreshBtn');
 
       if (status === 'connected') {
-        banner.className = 'mb-4 p-2.5 rounded-xl border flex items-center justify-between text-xs bg-emerald-50 border-emerald-200 text-emerald-950';
+        banner.className = 'mb-3.5 p-2.5 rounded-xl border flex items-center justify-between text-xs bg-emerald-50 border-emerald-200 text-emerald-950';
         iconWrap.innerHTML = '<i data-lucide="cloud" class="w-4 h-4 text-emerald-600"></i>';
         bannerTitle.textContent = '🟢 부부 실시간 클라우드 동기화 켜짐';
-        bannerDesc.textContent = message || '아내분과 남편분의 스마트폰이 클라우드로 연결되어 있습니다.';
+        bannerDesc.textContent = message || '지출과 일정이 배우자의 스마트폰과 실시간으로 연결되어 있습니다.';
         headerDot.className = 'w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0';
         headerText.textContent = '실시간 연동중';
         actionBtn.textContent = '연동 관리';
         actionBtn.className = 'bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-2.5 py-1 rounded-lg text-[11px] whitespace-nowrap transition';
         if (refreshBtn) refreshBtn.classList.remove('hidden');
       } else if (status === 'connecting') {
-        banner.className = 'mb-4 p-2.5 rounded-xl border flex items-center justify-between text-xs bg-indigo-50 border-indigo-200 text-indigo-950';
+        banner.className = 'mb-3.5 p-2.5 rounded-xl border flex items-center justify-between text-xs bg-indigo-50 border-indigo-200 text-indigo-950';
         iconWrap.innerHTML = '<i data-lucide="refresh-cw" class="w-4 h-4 text-indigo-600 animate-spin"></i>';
         bannerTitle.textContent = '🔄 클라우드 연결 및 동기화 중...';
         bannerDesc.textContent = message || 'Supabase 서버와 데이터를 맞추고 있습니다.';
@@ -734,10 +948,10 @@ alter publication supabase_realtime add table fixed_expenses;</pre>
         actionBtn.textContent = '설정';
         if (refreshBtn) refreshBtn.classList.add('hidden');
       } else {
-        banner.className = 'mb-4 p-2.5 rounded-xl border flex items-center justify-between text-xs bg-amber-50 border-amber-200 text-amber-900';
+        banner.className = 'mb-3.5 p-2.5 rounded-xl border flex items-center justify-between text-xs bg-amber-50 border-amber-200 text-amber-900';
         iconWrap.innerHTML = '<i data-lucide="cloud-off" class="w-4 h-4 text-amber-600"></i>';
         bannerTitle.textContent = '⚠️ 현재 개별 폰 저장 모드 (동기화 미연동)';
-        bannerDesc.textContent = message || '아내분과 실시간으로 공유하려면 연동 설정을 확인해 주세요.';
+        bannerDesc.textContent = message || '지출과 일정을 배우자와 실시간 공유하려면 연동 설정을 확인해 주세요.';
         headerDot.className = 'w-2 h-2 rounded-full bg-amber-400 shrink-0';
         headerText.textContent = '동기화 미연동';
         actionBtn.textContent = '연동 설정';
@@ -747,45 +961,73 @@ alter publication supabase_realtime add table fixed_expenses;</pre>
       lucide.createIcons();
     }
 
-    async function upsertToCloudWithFallback(itemsArray) {
+    async function upsertExpensesToCloudWithFallback(itemsArray) {
       if (!supabaseClient || itemsArray.length === 0) return { error: null };
-      let res = await supabaseClient.from('fixed_expenses').upsert(itemsArray.map(i => mapToDB(i, cloudSupportsOwnerColumn)));
+      let res = await supabaseClient.from('fixed_expenses').upsert(itemsArray.map(i => mapExpenseToDB(i, cloudSupportsOwnerColumn)));
       if (res.error && cloudSupportsOwnerColumn && String(res.error.message || '').includes('owner')) {
-        // 기존 테이블에 owner 컬럼이 없는 경우 자동으로 메모 태그 방식으로 폴백하여 재시도
         cloudSupportsOwnerColumn = false;
-        res = await supabaseClient.from('fixed_expenses').upsert(itemsArray.map(i => mapToDB(i, false)));
+        res = await supabaseClient.from('fixed_expenses').upsert(itemsArray.map(i => mapExpenseToDB(i, false)));
       }
       return res;
     }
 
-    // 원격 데이터 비교 후 변경점이 있을 때만 반영하는 함수
+    async function upsertScheduleToCloud(schedObj) {
+      if (!supabaseClient) return { error: null };
+      return await supabaseClient.from('schedules').upsert([mapScheduleToDB(schedObj)]);
+    }
+
+    async function deleteScheduleFromCloud(id) {
+      if (!supabaseClient) return { error: null };
+      return await supabaseClient.from('schedules').delete().eq('id', id);
+    }
+
+    // 클라우드 전체 데이터 동기화 함수 (고정지출 + 부부 일정)
     async function pullLatestFromCloud(showNotificationOnDiff = false) {
       if (!supabaseClient || isLocalMutating) return;
       try {
-        const { data, error } = await supabaseClient
+        let hasDiff = false;
+
+        // 1. 고정지출 확인
+        const { data: expData, error: expErr } = await supabaseClient
           .from('fixed_expenses')
           .select('*')
           .order('day', { ascending: true });
-        if (error || !data) return;
 
-        const remoteMapped = data.map(mapFromDB);
-        const currentSerialized = JSON.stringify(expenses);
-        const remoteSerialized = JSON.stringify(remoteMapped);
+        if (!expErr && expData) {
+          const remoteMappedExp = expData.map(mapExpenseFromDB);
+          if (JSON.stringify(expenses) !== JSON.stringify(remoteMappedExp)) {
+            expenses = remoteMappedExp;
+            localStorage.setItem(EXPENSES_STORAGE_KEY, JSON.stringify(expenses));
+            hasDiff = true;
+          }
+        }
 
-        if (currentSerialized !== remoteSerialized) {
-          expenses = remoteMapped;
-          localStorage.setItem(STORAGE_KEY, remoteSerialized);
-          render();
+        // 2. 부부 일정 확인 (schedules 테이블 존재 여부 안전 체크)
+        const { data: schedData, error: schedErr } = await supabaseClient
+          .from('schedules')
+          .select('*')
+          .order('date', { ascending: true });
+
+        if (!schedErr && schedData) {
+          const remoteMappedSched = schedData.map(mapScheduleFromDB);
+          if (JSON.stringify(schedules) !== JSON.stringify(remoteMappedSched)) {
+            schedules = remoteMappedSched;
+            localStorage.setItem(SCHEDULES_STORAGE_KEY, JSON.stringify(schedules));
+            hasDiff = true;
+          }
+        }
+
+        if (hasDiff) {
+          renderAll();
           if (showNotificationOnDiff) {
-            showToast('클라우드 변경 사항이 자동 반영되었습니다! 🔄');
+            showToast('배우자의 변경 사항이 자동 반영되었습니다! 🔄');
           }
         }
       } catch (e) {
-        // 백그라운드 폴링 중 일시적 네트워크 오류는 무시
+        // 일시적 네트워크 예외 무시
       }
     }
 
-    // WebSocket이 막힌 환경(미리보기/인앱 웹뷰 등)에서도 동기화를 보장하는 스마트 폴링 시작
     function startSmartPolling() {
       if (pollingIntervalId) clearInterval(pollingIntervalId);
       pollingIntervalId = setInterval(() => {
@@ -807,7 +1049,7 @@ alter publication supabase_realtime add table fixed_expenses;</pre>
       if (!cfg.url || !cfg.key || !cfg.url.includes('supabase.co')) {
         stopSmartPolling();
         updateSyncUI('disconnected');
-        render();
+        renderAll();
         return;
       }
 
@@ -819,85 +1061,100 @@ alter publication supabase_realtime add table fixed_expenses;</pre>
           auth: { persistSession: false }
         });
 
-        const { data, error } = await supabaseClient
+        // 1. 고정지출 데이터 로드
+        const { data: expData, error: expErr } = await supabaseClient
           .from('fixed_expenses')
           .select('*')
           .order('day', { ascending: true });
 
-        if (error) throw error;
+        if (expErr) throw expErr;
 
         const alreadyMigrated = localStorage.getItem(MIGRATED_FLAG_KEY) === 'true';
 
-        if (data && data.length > 0) {
-          expenses = data.map(mapFromDB);
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(expenses));
+        if (expData && expData.length > 0) {
+          expenses = expData.map(mapExpenseFromDB);
+          localStorage.setItem(EXPENSES_STORAGE_KEY, JSON.stringify(expenses));
           localStorage.setItem(MIGRATED_FLAG_KEY, 'true');
-          render();
-        } else if (data && data.length === 0) {
-          // 최초 연동 시에만 로컬 데이터를 클라우드로 마이그레이션하고, 이미 연동된 상태에서 전체 삭제된 경우 빈 배열 유지
+        } else if (expData && expData.length === 0) {
           if (!alreadyMigrated && expenses.length > 0) {
             isLocalMutating = true;
-            await upsertToCloudWithFallback(expenses);
+            await upsertExpensesToCloudWithFallback(expenses);
             setTimeout(() => { isLocalMutating = false; }, 600);
           } else {
             expenses = [];
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(expenses));
+            localStorage.setItem(EXPENSES_STORAGE_KEY, JSON.stringify(expenses));
           }
           localStorage.setItem(MIGRATED_FLAG_KEY, 'true');
-          render();
         }
 
-        // REST API(조회/저장)가 성공했으므로 연결 완료 상태로 전환 및 스마트 백그라운드 동기화 가동
+        // 2. 부부 일정 데이터 로드 (테이블이 없을 수 있으므로 try-catch)
+        try {
+          const { data: schedData, error: schedErr } = await supabaseClient
+            .from('schedules')
+            .select('*')
+            .order('date', { ascending: true });
+
+          if (!schedErr && schedData) {
+            if (schedData.length > 0) {
+              schedules = schedData.map(mapScheduleFromDB);
+              localStorage.setItem(SCHEDULES_STORAGE_KEY, JSON.stringify(schedules));
+            } else if (schedules.length > 0) {
+              await supabaseClient.from('schedules').upsert(schedules.map(mapScheduleToDB));
+            }
+          }
+        } catch (sErr) {
+          console.debug('schedules table may not be created yet.', sErr);
+        }
+
+        renderAll();
         updateSyncUI('connected');
         startSmartPolling();
 
-        // WebSocket 실시간 푸시 구독은 별도 예외 처리로 감싸서 WebView에서 차단되더라도 연결이 끊기지 않도록 보호
+        // 실시간 채널 구독
         try {
           if (typeof window.WebSocket !== 'undefined') {
-            if (realtimeChannel) {
-              supabaseClient.removeChannel(realtimeChannel);
-            }
+            if (realtimeChannel) supabaseClient.removeChannel(realtimeChannel);
             realtimeChannel = supabaseClient
-              .channel('realtime_fixed_expenses_changes')
-              .on(
-                'postgres_changes',
-                { event: '*', schema: 'public', table: 'fixed_expenses' },
-                async () => {
-                  if (isLocalMutating) return;
-                  await pullLatestFromCloud(true);
-                }
-              )
+              .channel('realtime_app_changes')
+              .on('postgres_changes', { event: '*', schema: 'public', table: 'fixed_expenses' }, async () => {
+                if (isLocalMutating) return;
+                await pullLatestFromCloud(true);
+              })
+              .on('postgres_changes', { event: '*', schema: 'public', table: 'schedules' }, async () => {
+                if (isLocalMutating) return;
+                await pullLatestFromCloud(true);
+              })
               .subscribe();
           }
         } catch (wsErr) {
-          // WebSocket이 지원되지 않는 미리보기/인앱 브라우저 환경에서는 스마트 폴링(startSmartPolling)이 동기화를 계속 수행함
-          console.debug('WebSocket unavailable, using Smart Polling sync fallback.');
+          console.debug('WebSocket unavailable, smart polling active.');
         }
+
       } catch (err) {
         stopSmartPolling();
         updateSyncUI('disconnected', `연결 오류: ${err.message}`);
-        render();
+        renderAll();
       }
     }
 
-    // 앱 화면으로 다시 돌아왔을 때 즉시 최신 클라우드 데이터 확인
     document.addEventListener('visibilitychange', () => {
       if (!document.hidden && supabaseClient) {
         pullLatestFromCloud(true);
       }
     });
 
+    // 고정지출 저장 및 삭제
     async function syncSaveItem(item) {
       const idx = expenses.findIndex(i => i.id === item.id);
       if (idx !== -1) expenses[idx] = item;
       else expenses.push(item);
 
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(expenses));
-      render();
+      localStorage.setItem(EXPENSES_STORAGE_KEY, JSON.stringify(expenses));
+      renderExpenseSection();
 
       if (supabaseClient) {
         isLocalMutating = true;
-        const { error } = await upsertToCloudWithFallback([item]);
+        const { error } = await upsertExpensesToCloudWithFallback([item]);
         setTimeout(() => { isLocalMutating = false; }, 600);
         if (error) showToast('⚠️ 클라우드 전송 실패: ' + error.message);
       }
@@ -905,14 +1162,44 @@ alter publication supabase_realtime add table fixed_expenses;</pre>
 
     async function syncDeleteItem(id) {
       expenses = expenses.filter(i => i.id !== id);
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(expenses));
-      render();
+      localStorage.setItem(EXPENSES_STORAGE_KEY, JSON.stringify(expenses));
+      renderExpenseSection();
 
       if (supabaseClient) {
         isLocalMutating = true;
         const { error } = await supabaseClient.from('fixed_expenses').delete().eq('id', id);
         setTimeout(() => { isLocalMutating = false; }, 600);
         if (error) showToast('⚠️ 클라우드 삭제 실패: ' + error.message);
+      }
+    }
+
+    // 부부 일정 저장 및 삭제
+    async function syncSaveSchedule(schedObj) {
+      const idx = schedules.findIndex(s => s.id === schedObj.id);
+      if (idx !== -1) schedules[idx] = schedObj;
+      else schedules.push(schedObj);
+
+      localStorage.setItem(SCHEDULES_STORAGE_KEY, JSON.stringify(schedules));
+      renderScheduleSection();
+
+      if (supabaseClient) {
+        isLocalMutating = true;
+        const { error } = await upsertScheduleToCloud(schedObj);
+        setTimeout(() => { isLocalMutating = false; }, 600);
+        if (error) showToast('⚠️ 일정 클라우드 전송 실패 (SQL 설정을 확인해주세요)');
+      }
+    }
+
+    async function syncDeleteSchedule(id) {
+      schedules = schedules.filter(s => s.id !== id);
+      localStorage.setItem(SCHEDULES_STORAGE_KEY, JSON.stringify(schedules));
+      renderScheduleSection();
+
+      if (supabaseClient) {
+        isLocalMutating = true;
+        const { error } = await deleteScheduleFromCloud(id);
+        setTimeout(() => { isLocalMutating = false; }, 600);
+        if (error) showToast('⚠️ 일정 클라우드 삭제 실패: ' + error.message);
       }
     }
 
@@ -971,7 +1258,6 @@ alter publication supabase_realtime add table fixed_expenses;</pre>
       return `<span class="text-[10px] bg-indigo-50 text-indigo-700 px-1.5 py-0.5 rounded border border-indigo-200 font-medium">${durationMonths}개월 약정</span>`;
     }
 
-    // 결제수단별(account, credit, check, direct) 상위 3개 출금계좌/카드명 추천 칩 렌더링
     function saveToFrequentHistory(field, val) {
       if (!val || !val.trim()) return;
       const cleanVal = val.trim();
@@ -988,7 +1274,6 @@ alter publication supabase_realtime add table fixed_expenses;</pre>
       const selectedMethod = $('itemPaymentMethod').value || 'account';
       const methodNames = { account: '계좌이체', credit: '신용카드', check: '체크카드', direct: '직접송금' };
 
-      // 1순위: 현재 선택된 결제수단에서 사용된 출금계좌/카드 빈도 집계
       const methodCounts = {};
       const allCounts = {};
 
@@ -1009,7 +1294,6 @@ alter publication supabase_realtime add table fixed_expenses;</pre>
       } catch (e) {}
 
       let topList = Object.keys(methodCounts).sort((a, b) => methodCounts[b] - methodCounts[a]);
-      // 만약 해당 결제수단에 등록된 내역이 아직 부족하면 전체 내역으로 보충하여 상위 3개 구성
       if (topList.length < 3) {
         Object.keys(allCounts)
           .sort((a, b) => allCounts[b] - allCounts[a])
@@ -1050,7 +1334,6 @@ alter publication supabase_realtime add table fixed_expenses;</pre>
         }
       }
 
-      // 메모 상위 3개 제안도 함께 갱신
       const memoCounts = {};
       expenses.forEach(item => {
         const m = (item.memo || '').trim();
@@ -1079,7 +1362,7 @@ alter publication supabase_realtime add table fixed_expenses;</pre>
       }
     }
 
-    // 대시보드 포트폴리오 섹션 렌더링 (4개 탭 모두 상세 구현)
+    // 대시보드 포트폴리오 섹션 렌더링
     function renderPortfolioSection(expMonthly, savMonthly, totalMonthly) {
       const expRate = totalMonthly > 0 ? Math.round((expMonthly / totalMonthly) * 100) : 0;
       const savRate = totalMonthly > 0 ? (100 - expRate) : 0;
@@ -1271,7 +1554,8 @@ alter publication supabase_realtime add table fixed_expenses;</pre>
       }
     }
 
-    function render() {
+    // 고정지출 렌더링
+    function renderExpenseSection() {
       let expMonthly = 0;
       let savMonthly = 0;
       let remainingExp = 0;
@@ -1281,7 +1565,6 @@ alter publication supabase_realtime add table fixed_expenses;</pre>
       let variableCount = 0;
       const upcomingItems = [];
 
-      // 만기 종료 항목은 월 고정자금 합계 및 남은 출금액에서 자동 제외
       const activeExpenses = expenses.filter(i => !checkIsMatured(i));
 
       activeExpenses.forEach(item => {
@@ -1324,6 +1607,7 @@ alter publication supabase_realtime add table fixed_expenses;</pre>
       $('totalMonthly').textContent = `${totalMonthly.toLocaleString()}원`;
       $('totalAnnual').textContent = `연 ${(totalMonthly * 12).toLocaleString()}원`;
       $('totalCountBadge').textContent = `활성 ${activeExpenses.length}건`;
+      $('badgeExpenseCount').textContent = activeExpenses.length;
       $('variableCountNotice').textContent = variableCount > 0 ? `⚡ 변동 고정비 ${variableCount}건 포함` : `전 항목 고정 금액`;
 
       $('todayRemainingAmount').textContent = `${todayRemaining.toLocaleString()}원`;
@@ -1442,7 +1726,378 @@ alter publication supabase_realtime add table fixed_expenses;</pre>
       lucide.createIcons();
     }
 
-    // --- 폼 상태 제어 핸들러 ---
+    // =========================================================================
+    // ⭐ 부부 2주 / 4주 콤팩트 일정 렌더링 로직 ⭐
+    // =========================================================================
+    const TIME_SLOT_CONFIG = {
+      ALL_DAY: { label: '종일', cls: 'bg-slate-100 text-slate-700 border-slate-200' },
+      MORNING: { label: '오전 ☀️', cls: 'bg-amber-50 text-amber-800 border-amber-200' },
+      AFTERNOON: { label: '오후 ⛅', cls: 'bg-sky-50 text-sky-800 border-sky-200' },
+      EVENING: { label: '저녁 🌙', cls: 'bg-indigo-50 text-indigo-800 border-indigo-200' },
+    };
+
+    const OWNER_CONFIG = {
+      husband: { label: '남편', cls: 'bg-blue-100 text-blue-800 border-blue-200' },
+      wife: { label: '아내', cls: 'bg-rose-100 text-rose-800 border-rose-200' },
+      both: { label: '우리', cls: 'bg-purple-100 text-purple-800 border-purple-200' },
+    };
+
+    const DAY_NAMES = ['일', '월', '화', '수', '목', '금', '토'];
+
+    // 2주 또는 4주 일정 타임라인 생성
+    function renderScheduleSection() {
+      const container = $('scheduleTimelineContainer');
+      const emptyState = $('scheduleEmptyState');
+      $('badgeScheduleCount').textContent = schedules.length;
+
+      // 이번 주 월요일 기준 날짜 계산
+      const curr = new Date(today);
+      const dayOfWeek = curr.getDay(); // 0(일) ~ 6(토)
+      const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+      const startMonday = new Date(curr);
+      startMonday.setDate(curr.getDate() + mondayOffset);
+
+      const totalWeeks = currentScheduleWeeks; // 2 or 4
+      const totalDays = totalWeeks * 7;
+
+      // 주차별 그룹핑 생성
+      const weeksData = [];
+      let totalVisibleSchedules = 0;
+
+      for (let w = 0; w < totalWeeks; w++) {
+        const weekDays = [];
+        for (let d = 0; d < 7; d++) {
+          const dateObj = new Date(startMonday);
+          dateObj.setDate(startMonday.getDate() + (w * 7) + d);
+          const ymd = formatDateYMD(dateObj);
+          
+          // 해당 일자의 스케줄 필터링
+          let daySchedules = schedules.filter(s => s.date === ymd);
+          if (currentScheduleFilter !== 'all') {
+            daySchedules = daySchedules.filter(s => s.owner === currentScheduleFilter);
+          }
+
+          // 시간대별 정렬: ALL_DAY -> MORNING -> AFTERNOON -> EVENING
+          const slotOrder = { ALL_DAY: 1, MORNING: 2, AFTERNOON: 3, EVENING: 4 };
+          daySchedules.sort((a, b) => (slotOrder[a.timeSlot] || 1) - (slotOrder[b.timeSlot] || 1));
+
+          totalVisibleSchedules += daySchedules.length;
+
+          weekDays.push({
+            dateObj,
+            ymd,
+            dayOfMonth: dateObj.getDate(),
+            month: dateObj.getMonth() + 1,
+            dayName: DAY_NAMES[dateObj.getDay()],
+            isToday: ymd === todayYMD,
+            isPast: ymd < todayYMD,
+            isWeekend: dateObj.getDay() === 0 || dateObj.getDay() === 6,
+            isSunday: dateObj.getDay() === 0,
+            isSaturday: dateObj.getDay() === 6,
+            items: daySchedules
+          });
+        }
+        weeksData.push(weekDays);
+      }
+
+      $('schedulePeriodSummary').textContent = `${totalWeeks}주간 총 ${totalVisibleSchedules}건의 일정`;
+
+      if (totalVisibleSchedules === 0 && schedules.length === 0) {
+        container.innerHTML = '';
+        emptyState.classList.remove('hidden');
+        return;
+      }
+      emptyState.classList.add('hidden');
+
+      const weekTitles = ['이번 주 (1주차)', '다음 주 (2주차)', '다다음 주 (3주차)', '4주차 일정'];
+
+      container.innerHTML = weeksData.map((week, wIdx) => {
+        const weekItemsCount = week.reduce((acc, d) => acc + d.items.length, 0);
+        const isCurrentWeek = wIdx === 0;
+
+        const daysHtml = week.map(d => {
+          const hasItems = d.items.length > 0;
+          let dayColor = 'text-slate-800';
+          if (d.isSunday) dayColor = 'text-rose-600';
+          else if (d.isSaturday) dayColor = 'text-blue-600';
+
+          const todayBadge = d.isToday
+            ? '<span class="text-[9px] bg-rose-500 text-white font-bold px-1.5 py-0.5 rounded-full animate-pulse ml-1">오늘</span>'
+            : '';
+
+          // 일정이 있는 날
+          if (hasItems) {
+            const itemsHtml = d.items.map(item => {
+              const ownerInfo = OWNER_CONFIG[item.owner] || OWNER_CONFIG.husband;
+              const slotInfo = TIME_SLOT_CONFIG[item.timeSlot] || TIME_SLOT_CONFIG.ALL_DAY;
+
+              return `
+                <div class="flex items-center justify-between p-2 rounded-xl bg-white border border-slate-200/90 shadow-sm hover:border-rose-200 transition">
+                  <div class="flex items-center gap-1.5 min-w-0">
+                    <span class="text-[10px] font-bold px-1.5 py-0.5 rounded-md border ${ownerInfo.cls} shrink-0">${ownerInfo.label}</span>
+                    <span class="text-[10px] font-semibold px-1.5 py-0.5 rounded-md border ${slotInfo.cls} shrink-0">${slotInfo.label}</span>
+                    <span class="text-xs font-bold text-slate-800 truncate">${escapeHtml(item.title)}</span>
+                  </div>
+                  <div class="flex items-center gap-1 shrink-0 ml-2">
+                    <button type="button" data-schedid="${item.id}" class="edit-schedule-btn text-slate-400 hover:text-rose-600 p-1" title="수정">
+                      <i data-lucide="settings-2" class="w-3.5 h-3.5"></i>
+                    </button>
+                    <button type="button" data-schedid="${item.id}" class="delete-schedule-btn text-slate-400 hover:text-rose-600 p-1" title="삭제">
+                      <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                    </button>
+                  </div>
+                </div>
+              `;
+            }).join('');
+
+            return `
+              <div class="p-2.5 rounded-xl border ${d.isToday ? 'border-rose-300 bg-rose-50/20 shadow-sm' : 'border-slate-200 bg-slate-50/40'} space-y-1.5">
+                <div class="flex items-center justify-between text-xs">
+                  <div class="flex items-center gap-1 font-bold ${dayColor}">
+                    <span>${d.month}.${d.dayOfMonth} (${d.dayName})</span>
+                    ${todayBadge}
+                  </div>
+                  <button type="button" data-ymd="${d.ymd}" class="quick-add-on-date-btn text-[10px] font-bold text-slate-500 hover:text-rose-600 flex items-center gap-0.5">
+                    <i data-lucide="plus" class="w-3 h-3"></i> 추가
+                  </button>
+                </div>
+                <div class="space-y-1">${itemsHtml}</div>
+              </div>
+            `;
+          } else {
+            // 일정이 없는 날 (미니멀하게 1줄 처리로 세로 스크롤 최적화)
+            return `
+              <div data-ymd="${d.ymd}" class="quick-add-on-date-btn cursor-pointer py-1.5 px-2.5 rounded-lg border border-dashed border-slate-200/90 hover:border-rose-300 hover:bg-rose-50/30 flex items-center justify-between text-[11px] transition">
+                <div class="flex items-center gap-1 font-medium ${dayColor}">
+                  <span>${d.month}.${d.dayOfMonth} (${d.dayName})</span>
+                  ${todayBadge}
+                </div>
+                <span class="text-[10px] text-slate-400 flex items-center gap-1">일정 없음 <i data-lucide="plus" class="w-3 h-3 opacity-60"></i></span>
+              </div>
+            `;
+          }
+        }).join('');
+
+        return `
+          <section class="bg-white rounded-2xl border border-slate-200 p-3.5 shadow-sm space-y-2.5">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-1.5">
+                <span class="w-2 h-2 rounded-full ${isCurrentWeek ? 'bg-rose-500 animate-pulse' : 'bg-slate-400'}"></span>
+                <h3 class="text-xs font-bold text-slate-800">${weekTitles[wIdx] || `${wIdx + 1}주차`}</h3>
+              </div>
+              <span class="text-[10px] px-2 py-0.5 rounded-full ${weekItemsCount > 0 ? 'bg-rose-50 text-rose-600 font-bold' : 'bg-slate-100 text-slate-400'}">
+                일정 ${weekItemsCount}건
+              </span>
+            </div>
+            <div class="space-y-1.5">${daysHtml}</div>
+          </section>
+        `;
+      }).join('');
+
+      lucide.createIcons();
+    }
+
+    function renderAll() {
+      renderExpenseSection();
+      renderScheduleSection();
+    }
+
+    // 메인 탭 전환 (고정지출 vs 부부 일정)
+    $('mainTabExpense').addEventListener('click', () => {
+      activeMainTab = 'expense';
+      $('mainTabExpense').className = 'py-2.5 px-3 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition bg-white text-indigo-700 shadow-sm';
+      $('mainTabSchedule').className = 'py-2.5 px-3 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition text-slate-600 hover:text-slate-900';
+      $('expenseViewSection').classList.remove('hidden');
+      $('scheduleViewSection').classList.add('hidden');
+    });
+
+    $('mainTabSchedule').addEventListener('click', () => {
+      activeMainTab = 'schedule';
+      $('mainTabSchedule').className = 'py-2.5 px-3 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition bg-white text-rose-600 shadow-sm';
+      $('mainTabExpense').className = 'py-2.5 px-3 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition text-slate-600 hover:text-slate-900';
+      $('scheduleViewSection').classList.remove('hidden');
+      $('expenseViewSection').classList.add('hidden');
+      renderScheduleSection();
+    });
+
+    // 2주 / 4주 뷰 토글
+    $('btnWeeks2').addEventListener('click', () => {
+      currentScheduleWeeks = 2;
+      $('btnWeeks2').className = 'px-3 py-1.5 rounded-lg text-xs font-bold transition bg-white text-rose-600 shadow-sm flex items-center gap-1';
+      $('btnWeeks4').className = 'px-3 py-1.5 rounded-lg text-xs font-semibold transition text-slate-600 hover:text-slate-900 flex items-center gap-1';
+      renderScheduleSection();
+    });
+
+    $('btnWeeks4').addEventListener('click', () => {
+      currentScheduleWeeks = 4;
+      $('btnWeeks4').className = 'px-3 py-1.5 rounded-lg text-xs font-bold transition bg-white text-rose-600 shadow-sm flex items-center gap-1';
+      $('btnWeeks2').className = 'px-3 py-1.5 rounded-lg text-xs font-semibold transition text-slate-600 hover:text-slate-900 flex items-center gap-1';
+      renderScheduleSection();
+    });
+
+    // 일정 주체 필터 탭
+    document.querySelectorAll('.sched-filter-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.sched-filter-btn').forEach(b => {
+          b.className = 'sched-filter-btn px-2 py-1 rounded-lg text-[11px] font-medium bg-slate-100 text-slate-600 hover:bg-slate-200 transition';
+        });
+        btn.className = 'sched-filter-btn px-2 py-1 rounded-lg text-[11px] font-bold bg-slate-800 text-white transition';
+        currentScheduleFilter = btn.dataset.sfilter;
+        renderScheduleSection();
+      });
+    });
+
+    // =========================================================================
+    // ⭐ 부부 일정 모달 컨트롤러 ⭐
+    // =========================================================================
+    const scheduleModal = $('scheduleModal');
+
+    function setScheduleOwner(ownerVal) {
+      $('schedOwner').value = ownerVal;
+      document.querySelectorAll('.sowner-btn').forEach(b => {
+        if (b.dataset.sowner === ownerVal) {
+          b.className = 'sowner-btn py-2 rounded-xl border text-xs font-bold transition ' +
+            (ownerVal === 'husband' ? 'bg-blue-50 border-blue-500 text-blue-700 shadow-sm' :
+             ownerVal === 'wife' ? 'bg-rose-50 border-rose-500 text-rose-700 shadow-sm' :
+             'bg-purple-50 border-purple-500 text-purple-700 shadow-sm');
+        } else {
+          b.className = 'sowner-btn py-2 rounded-xl border text-xs font-medium bg-white border-slate-200 text-slate-600 hover:bg-slate-50 transition';
+        }
+      });
+    }
+
+    function setScheduleTimeSlot(slotVal) {
+      $('schedTimeSlot').value = slotVal;
+      document.querySelectorAll('.slot-btn').forEach(b => {
+        if (b.dataset.slot === slotVal) {
+          b.className = 'slot-btn py-2 rounded-xl border text-xs font-bold bg-slate-800 border-slate-800 text-white transition shadow-sm';
+        } else {
+          b.className = 'slot-btn py-2 rounded-xl border text-xs font-medium bg-white border-slate-200 text-slate-600 hover:bg-slate-50 transition';
+        }
+      });
+    }
+
+    document.querySelectorAll('.sowner-btn').forEach(btn => {
+      btn.addEventListener('click', () => setScheduleOwner(btn.dataset.sowner));
+    });
+
+    document.querySelectorAll('.slot-btn').forEach(btn => {
+      btn.addEventListener('click', () => setScheduleTimeSlot(btn.dataset.slot));
+    });
+
+    document.querySelectorAll('.sched-quick-tag').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const tag = btn.dataset.tag;
+        const cur = $('schedTitle').value.trim();
+        $('schedTitle').value = cur ? `${cur} (${tag})` : tag;
+        $('schedTitle').focus();
+      });
+    });
+
+    function openScheduleModal(editId = null, prefilledDate = null) {
+      $('scheduleForm').reset();
+      $('schedId').value = '';
+
+      if (editId) {
+        const item = schedules.find(s => s.id === editId);
+        if (!item) return;
+        $('scheduleModalTitle').textContent = '부부 일정 수정';
+        $('schedId').value = item.id;
+        $('schedTitle').value = item.title;
+        $('schedDate').value = item.date;
+        setScheduleOwner(item.owner || 'husband');
+        setScheduleTimeSlot(item.timeSlot || 'ALL_DAY');
+      } else {
+        $('scheduleModalTitle').textContent = '새 부부 일정 등록';
+        $('schedDate').value = prefilledDate || todayYMD;
+        setScheduleOwner('husband');
+        setScheduleTimeSlot('ALL_DAY'); // 종일이 기본값
+      }
+
+      scheduleModal.classList.remove('hidden');
+      document.body.classList.add('overflow-hidden');
+      lucide.createIcons();
+    }
+
+    function closeScheduleModal() {
+      scheduleModal.classList.add('hidden');
+      document.body.classList.remove('overflow-hidden');
+    }
+
+    $('openAddScheduleBtn').addEventListener('click', () => openScheduleModal());
+    $('closeScheduleModalBtn').addEventListener('click', closeScheduleModal);
+    $('cancelScheduleModalBtn').addEventListener('click', closeScheduleModal);
+
+    // 일정 저장 폼 제출
+    $('scheduleForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const id = $('schedId').value || (Date.now().toString() + Math.random().toString(36).substr(2, 5));
+      const title = $('schedTitle').value.trim();
+      const date = $('schedDate').value;
+      const owner = $('schedOwner').value || 'husband';
+      const timeSlot = $('schedTimeSlot').value || 'ALL_DAY';
+
+      if (!title || !date) {
+        showToast('⚠️ 일정 내용과 날짜를 입력해 주세요.');
+        return;
+      }
+
+      const scheduleObj = {
+        id,
+        title,
+        date,
+        owner,
+        timeSlot,
+        createdAt: new Date().toISOString()
+      };
+
+      await syncSaveSchedule(scheduleObj);
+      showToast('일정이 저장되었습니다! 📅');
+      closeScheduleModal();
+    });
+
+    // 일정 영역 내 클릭 이벤트 위임 (추가, 수정, 2단계 터치 삭제)
+    $('scheduleTimelineContainer').addEventListener('click', async (e) => {
+      const addBtn = e.target.closest('.quick-add-on-date-btn');
+      if (addBtn && !e.target.closest('.delete-schedule-btn') && !e.target.closest('.edit-schedule-btn')) {
+        const targetYMD = addBtn.dataset.ymd;
+        openScheduleModal(null, targetYMD);
+        return;
+      }
+
+      const editBtn = e.target.closest('.edit-schedule-btn');
+      if (editBtn) {
+        openScheduleModal(editBtn.dataset.schedid);
+        return;
+      }
+
+      const delBtn = e.target.closest('.delete-schedule-btn');
+      if (delBtn) {
+        const id = delBtn.dataset.schedid;
+        const it = schedules.find(s => s.id === id);
+
+        if (pendingScheduleDeleteId !== id) {
+          pendingScheduleDeleteId = id;
+          delBtn.classList.add('text-rose-600', 'bg-rose-50', 'rounded');
+          showToast(`'${it ? it.title : '일정'}' 삭제: 쓰레기통을 한 번 더 누르면 삭제됩니다.`);
+          if (pendingScheduleDeleteTimer) clearTimeout(pendingScheduleDeleteTimer);
+          pendingScheduleDeleteTimer = setTimeout(() => {
+            pendingScheduleDeleteId = null;
+            renderScheduleSection();
+          }, 3000);
+          return;
+        }
+
+        pendingScheduleDeleteId = null;
+        if (pendingScheduleDeleteTimer) clearTimeout(pendingScheduleDeleteTimer);
+        await syncDeleteSchedule(id);
+        showToast('일정이 삭제되었습니다.');
+      }
+    });
+
+    // =========================================================================
+    // 기존 고정지출 폼 & 제어 핸들러
+    // =========================================================================
     function setType(t) {
       $('itemType').value = t;
       $('btnTypeExpense').className = 'flex items-center justify-center gap-1.5 py-2.5 rounded-xl border font-semibold transition ' +
@@ -1514,7 +2169,6 @@ alter publication supabase_realtime add table fixed_expenses;</pre>
       }
     }
 
-    // 버튼 이벤트 바인딩
     $('btnTypeExpense').onclick = () => setType('expense');
     $('btnTypeSavings').onclick = () => setType('savings');
     $('btnToggleVariable').onclick = () => setVariable(!isVariable);
@@ -1528,8 +2182,6 @@ alter publication supabase_realtime add table fixed_expenses;</pre>
     $('itemAmount').addEventListener('input', updateAmountPreview);
     $('itemDurationMonths').addEventListener('input', updateMaturityPreview);
     $('itemStartYearMonth').addEventListener('input', updateMaturityPreview);
-
-    // 결제수단 변경 시 해당 결제수단의 상위 3개 출금계좌/카드 칩 즉시 업데이트
     $('itemPaymentMethod').addEventListener('change', updatePaymentSuggestions);
 
     document.querySelectorAll('.quick-amt-btn').forEach(btn => {
@@ -1553,7 +2205,6 @@ alter publication supabase_realtime add table fixed_expenses;</pre>
       });
     });
 
-    // 모달 열기/닫기
     const modal = $('itemModal');
     const syncModal = $('syncModal');
     const quickAmtModal = $('quickAmtModal');
@@ -1620,7 +2271,6 @@ alter publication supabase_realtime add table fixed_expenses;</pre>
     $('closeModalBtn').addEventListener('click', closeModal);
     $('cancelModalBtn').addEventListener('click', closeModal);
 
-    // 항목 저장 제출
     $('itemForm').addEventListener('submit', async (e) => {
       e.preventDefault();
       const id = $('itemId').value || (Date.now().toString() + Math.random().toString(36).substr(2, 5));
@@ -1665,7 +2315,7 @@ alter publication supabase_realtime add table fixed_expenses;</pre>
       closeModal();
     });
 
-    // --- 1초 빠른 금액 수정 모달 제어 ---
+    // 1초 빠른 금액 수정 모달
     function openQuickAmtModal(item) {
       $('quickAmtItemId').value = item.id;
       $('quickAmtTitle').textContent = `[${item.name}] 이번 달 금액`;
@@ -1715,7 +2365,7 @@ alter publication supabase_realtime add table fixed_expenses;</pre>
       closeQuickAmtModal();
     });
 
-    // 리스트 클릭 이벤트 위임
+    // 고정지출 리스트 클릭 이벤트
     $('expenseList').addEventListener('click', async (e) => {
       const q = e.target.closest('.quick-amount-edit-btn');
       if (q) {
@@ -1729,7 +2379,7 @@ alter publication supabase_realtime add table fixed_expenses;</pre>
       if (delBtn) {
         const targetId = delBtn.dataset.id;
         const it = expenses.find(i => i.id === targetId);
-        // 2단계 터치 안전 삭제 (브라우저 기본 confirm 창 없이 모바일에서 안전하게 삭제)
+
         if (pendingDeleteId !== targetId) {
           pendingDeleteId = targetId;
           delBtn.classList.add('text-rose-600', 'bg-rose-50', 'rounded');
@@ -1737,7 +2387,7 @@ alter publication supabase_realtime add table fixed_expenses;</pre>
           if (pendingDeleteTimer) clearTimeout(pendingDeleteTimer);
           pendingDeleteTimer = setTimeout(() => {
             pendingDeleteId = null;
-            render();
+            renderExpenseSection();
           }, 3000);
           return;
         }
@@ -1750,7 +2400,6 @@ alter publication supabase_realtime add table fixed_expenses;</pre>
       }
     });
 
-    // 수동 동기화 새로고침 버튼 이벤트
     $('manualRefreshBtn').addEventListener('click', async () => {
       if (!supabaseClient) return;
       showToast('클라우드 데이터를 최신 상태로 확인합니다...');
@@ -1758,7 +2407,6 @@ alter publication supabase_realtime add table fixed_expenses;</pre>
       showToast('최신 데이터 동기화 완료 ✓');
     });
 
-    // 동기화 설정 모달 이벤트
     function openSyncModal() {
       const cfg = getStoredSupabaseConfig();
       $('cfgSupabaseUrl').value = cfg.url || window.DEFAULT_SUPABASE_URL || '';
@@ -1800,8 +2448,7 @@ alter publication supabase_realtime add table fixed_expenses;</pre>
       showToast('연동이 해제되었습니다.');
     });
 
-    // 배경 클릭 및 ESC 키로 모달 닫기
-    [modal, syncModal, quickAmtModal].forEach(m => {
+    [modal, syncModal, quickAmtModal, scheduleModal].forEach(m => {
       m.addEventListener('click', (e) => {
         if (e.target === m) {
           m.classList.add('hidden');
@@ -1809,15 +2456,16 @@ alter publication supabase_realtime add table fixed_expenses;</pre>
         }
       });
     });
+
     window.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') {
         closeModal();
         closeQuickAmtModal();
+        closeScheduleModal();
         syncModal.classList.add('hidden');
       }
     });
 
-    // 탭 및 필터 전환
     document.querySelectorAll('.portfolio-tab').forEach(btn => {
       btn.addEventListener('click', () => {
         document.querySelectorAll('.portfolio-tab').forEach(t => {
@@ -1827,7 +2475,7 @@ alter publication supabase_realtime add table fixed_expenses;</pre>
         btn.classList.add('bg-white', 'text-indigo-700', 'shadow-sm');
         btn.classList.remove('text-slate-600');
         currentPortfolioTab = btn.dataset.ptab;
-        render();
+        renderExpenseSection();
       });
     });
 
@@ -1840,24 +2488,30 @@ alter publication supabase_realtime add table fixed_expenses;</pre>
         tab.classList.add('bg-white', 'text-slate-900', 'shadow-sm');
         tab.classList.remove('text-slate-600');
         currentFilter = tab.dataset.filter;
-        render();
+        renderExpenseSection();
       });
     });
 
-    $('searchInput').addEventListener('input', render);
-    $('ownerFilterSelect').addEventListener('change', render);
-    $('sortSelect').addEventListener('change', render);
+    $('searchInput').addEventListener('input', renderExpenseSection);
+    $('ownerFilterSelect').addEventListener('change', renderExpenseSection);
+    $('sortSelect').addEventListener('change', renderExpenseSection);
 
-    // JSON 백업 및 일괄(Batch) 복원
+    // 통합 JSON 백업 & 복원 (지출 + 일정)
     $('exportBtn').addEventListener('click', () => {
-      const blob = new Blob([JSON.stringify(expenses, null, 2)], { type: 'application/json' });
+      const backupData = {
+        expenses,
+        schedules,
+        exportedAt: new Date().toISOString(),
+        version: 'v4.1'
+      };
+      const blob = new Blob([JSON.stringify(backupData, null, 2)], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `고정지출_백업_${new Date().toISOString().slice(0, 10)}.json`;
+      a.download = `부부플래너_통합백업_${new Date().toISOString().slice(0, 10)}.json`;
       a.click();
       URL.revokeObjectURL(url);
-      showToast('백업 파일이 다운로드되었습니다.');
+      showToast('통합 백업 파일이 다운로드되었습니다.');
     });
 
     $('importFile').addEventListener('change', (e) => {
@@ -1868,6 +2522,7 @@ alter publication supabase_realtime add table fixed_expenses;</pre>
         try {
           const imported = JSON.parse(event.target.result);
           if (Array.isArray(imported)) {
+            // 구버전 백업 파일 호환 (단일 고정지출 배열)
             expenses = imported.map(it => ({
               ...it,
               id: String(it.id || Date.now() + Math.random()),
@@ -1875,15 +2530,32 @@ alter publication supabase_realtime add table fixed_expenses;</pre>
               day: Number(it.day) || 1,
               owner: it.owner || '남편'
             }));
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(expenses));
-            render();
+            localStorage.setItem(EXPENSES_STORAGE_KEY, JSON.stringify(expenses));
             if (supabaseClient && expenses.length > 0) {
               isLocalMutating = true;
-              await upsertToCloudWithFallback(expenses);
+              await upsertExpensesToCloudWithFallback(expenses);
               setTimeout(() => { isLocalMutating = false; }, 600);
             }
-            showToast(`총 ${expenses.length}건의 데이터 복원이 완료되었습니다.`);
+            showToast(`고정지출 ${expenses.length}건이 복원되었습니다.`);
+          } else if (imported && typeof imported === 'object') {
+            // 신버전 통합 백업 파일
+            if (Array.isArray(imported.expenses)) {
+              expenses = imported.expenses;
+              localStorage.setItem(EXPENSES_STORAGE_KEY, JSON.stringify(expenses));
+              if (supabaseClient && expenses.length > 0) {
+                await upsertExpensesToCloudWithFallback(expenses);
+              }
+            }
+            if (Array.isArray(imported.schedules)) {
+              schedules = imported.schedules;
+              localStorage.setItem(SCHEDULES_STORAGE_KEY, JSON.stringify(schedules));
+              if (supabaseClient && schedules.length > 0) {
+                await supabaseClient.from('schedules').upsert(schedules.map(mapScheduleToDB));
+              }
+            }
+            showToast(`통합 데이터 (지출 ${expenses.length}건, 일정 ${schedules.length}건) 복원 완료!`);
           }
+          renderAll();
         } catch (err) {
           showToast('⚠️ 올바른 백업 파일(JSON)이 아닙니다.');
         } finally {
@@ -1893,8 +2565,8 @@ alter publication supabase_realtime add table fixed_expenses;</pre>
       reader.readAsText(file);
     });
 
-    // 초기 로컬 캐시 즉시 렌더링 후 클라우드 동기화 시작
-    render();
+    // 시작: 초기 렌더링 후 클라우드 동기화 개시
+    renderAll();
     initSupabaseSync();
   </script>
 </body>
