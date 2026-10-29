@@ -83,7 +83,7 @@
         </div>
       </div>
       <div class="flex items-center gap-1 shrink-0 ml-2">
-        <button id="manualRefreshBtn" type="button" title="지금 즉시 동기화" class="hidden p-1.5 rounded-lg bg-emerald-100 hover:bg-emerald-200 text-emerald-800 transition">
+        <button id="manualRefreshBtn" type="button" title="지금 즉시 양방향 동기화" class="hidden p-1.5 rounded-lg bg-emerald-100 hover:bg-emerald-200 text-emerald-800 transition">
           <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
         </button>
         <button id="bannerActionBtn" type="button" class="bg-amber-600 hover:bg-amber-700 text-white font-semibold px-2.5 py-1 rounded-lg text-[11px] whitespace-nowrap transition">
@@ -372,7 +372,7 @@
         </button>
       </div>
       <p class="text-xs text-slate-600 mb-3 leading-relaxed">
-        일정 등록 시 <b>부부 텔레그램 단톡방</b>으로 즉시 알림이 전송됩니다. 토큰 만료 없이 평생 무료입니다.
+        일정 등록 시 <b>부부 텔레그램 단톡방</b>으로 즉시 알림이 전송되며, 설정 정보는 클라우드를 통해 배우자 폰에도 자동 공유됩니다.
       </p>
 
       <form id="notifyConfigForm" class="space-y-3 text-xs">
@@ -425,7 +425,7 @@
         </button>
       </div>
       <p class="text-xs text-slate-600 mb-3 leading-relaxed">
-        Supabase <b>Project URL</b>과 <b>anon public 키</b>로 고정지출과 부부 일정을 실시간 동기화합니다.
+        Supabase <b>Project URL</b>과 <b>anon public 키</b>로 고정지출, 부부 일정, 빠른 키워드, 알림 설정을 실시간 동기화합니다.
       </p>
       <form id="syncConfigForm" class="space-y-3 text-xs">
         <div>
@@ -437,37 +437,24 @@
           <textarea id="cfgSupabaseKey" required rows="3" class="w-full px-3 py-2 border border-slate-200 rounded-lg font-mono text-[11px] focus:ring-2 focus:ring-indigo-500 focus:outline-none"></textarea>
         </div>
 
+        <div class="p-2.5 bg-emerald-50 border border-emerald-200 rounded-lg text-[11px] text-emerald-900">
+          ✨ <b>자동 호환 안내:</b> 이미 <code>fixed_expenses</code> 테이블이 생성되어 있다면 별도의 추가 SQL 실행 없이도 <b>부부 일정과 키워드가 자동으로 함께 동기화</b>됩니다.
+        </div>
+
         <details class="bg-slate-50 p-2.5 rounded-lg border border-slate-200 text-[11px] text-slate-600">
-          <summary class="font-semibold text-slate-700 cursor-pointer select-none">🛠️ Supabase SQL 테이블 설정 코드 (지출 & 일정)</summary>
-          <p class="mt-1.5 text-[10px] text-slate-500">Supabase SQL Editor에서 아래 구문을 1회 실행하시면 지출과 일정 공유 테이블이 모두 준비됩니다.</p>
-          <pre id="sqlSnippet" class="mt-1.5 p-2 bg-slate-900 text-emerald-300 rounded text-[10px] overflow-x-auto font-mono leading-relaxed">-- 1. 고정지출 테이블
-create table if not exists fixed_expenses (
+          <summary class="font-semibold text-slate-700 cursor-pointer select-none">🛠️ (초기 1회용) Supabase SQL 테이블 설정 코드</summary>
+          <p class="mt-1.5 text-[10px] text-slate-500">처음 프로젝트를 만드셨다면 Supabase SQL Editor에서 아래 구문을 1회 실행해 주세요.</p>
+          <pre id="sqlSnippet" class="mt-1.5 p-2 bg-slate-900 text-emerald-300 rounded text-[10px] overflow-x-auto font-mono leading-relaxed">create table if not exists fixed_expenses (
   id text primary key, name text, amount bigint, base_amount bigint,
   is_variable boolean default false, day int, category text, type text,
   payment_method text, payment_detail text, memo text,
   duration_months int, start_year_month text, owner text default '남편'
 );
+alter table fixed_expenses add column if not exists owner text default '남편';
 alter table fixed_expenses enable row level security;
-drop policy if exists "anon all fixed_expenses" on fixed_expenses;
-create policy "anon all fixed_expenses" on fixed_expenses for all using (true) with check (true);
-alter publication supabase_realtime add table fixed_expenses;
-
--- 2. 부부 일정 테이블 (반복 기능 컬럼 포함)
-create table if not exists schedules (
-  id text primary key,
-  owner text default 'husband',
-  title text not null,
-  date text not null,
-  time_slot text default 'ALL_DAY',
-  tag text,
-  repeat text default 'NONE',
-  created_at timestamp with time zone default now()
-);
-alter table schedules add column if not exists repeat text default 'NONE';
-alter table schedules enable row level security;
-drop policy if exists "anon all schedules" on schedules;
-create policy "anon all schedules" on schedules for all using (true) with check (true);
-alter publication supabase_realtime add table schedules;</pre>
+drop policy if exists "anon all" on fixed_expenses;
+create policy "anon all" on fixed_expenses for all using (true) with check (true);
+alter publication supabase_realtime add table fixed_expenses;</pre>
           <button type="button" id="copySqlBtn" class="mt-1.5 w-full py-1 bg-white border border-slate-300 rounded text-[10px] font-semibold text-slate-700 hover:bg-slate-100">SQL 코드 복사하기</button>
         </details>
 
@@ -778,7 +765,7 @@ alter publication supabase_realtime add table schedules;</pre>
           <!-- 커스텀 키워드 추가/삭제 영역 -->
           <div class="mt-2.5 p-2 bg-slate-50 rounded-xl border border-slate-100 space-y-2">
             <div class="flex items-center justify-between">
-              <span class="text-[10px] text-slate-500 font-semibold">⚡ 빠른 입력 키워드 (터치 시 자동 입력)</span>
+              <span class="text-[10px] text-slate-500 font-semibold">⚡ 빠른 입력 키워드 (터치 시 자동 입력 · 클라우드 공유)</span>
             </div>
             
             <div id="quickTagList" class="flex flex-wrap gap-1"></div>
@@ -852,23 +839,61 @@ alter publication supabase_realtime add table schedules;</pre>
     const SCHEDULES_STORAGE_KEY = 'couple_schedules_v1';
     const QUICK_TAGS_STORAGE_KEY = 'couple_quick_tags_v1';
     const TELEGRAM_CONFIG_KEY = 'couple_telegram_config_v1';
-    const MIGRATED_FLAG_KEY = 'budget_cloud_migrated_v4';
+    const DELETED_IDS_STORAGE_KEY = 'couple_deleted_ids_v1';
     const HISTORY_STORAGE_PREFIX = 'budget_frequent_';
+
+    // fixed_expenses 테이블 내 일정 및 메타데이터 저장용 접두사
+    const SCHED_ROW_PREFIX = '__sched__';
+    const META_ROW_ID = '__app_meta__';
 
     let supabaseClient = null;
     let realtimeChannel = null;
     let pollingIntervalId = null;
     let isLocalMutating = false;
+    let mutationVersion = 0;
+    let mutatingUnlockTimer = null;
     let cloudSupportsOwnerColumn = true;
+    let cloudHasSchedulesTable = false;
     let pendingDeleteId = null;
     let pendingDeleteTimer = null;
+
+    function lockMutation() {
+      isLocalMutating = true;
+      mutationVersion += 1;
+      if (mutatingUnlockTimer) clearTimeout(mutatingUnlockTimer);
+    }
+
+    function unlockMutationAfter(ms = 1200) {
+      if (mutatingUnlockTimer) clearTimeout(mutatingUnlockTimer);
+      mutatingUnlockTimer = setTimeout(() => {
+        isLocalMutating = false;
+      }, ms);
+    }
+
+    // 삭제된 항목 기록 (양방향 병합 시 삭제된 항목이 다시 살아나는 것 방지)
+    let deletedIds = [];
+    try {
+      const savedDel = localStorage.getItem(DELETED_IDS_STORAGE_KEY);
+      deletedIds = savedDel ? JSON.parse(savedDel) : [];
+    } catch (e) {
+      deletedIds = [];
+    }
+    function markIdDeleted(id) {
+      const strId = String(id);
+      if (!deletedIds.includes(strId)) {
+        deletedIds.push(strId);
+        if (deletedIds.length > 300) deletedIds = deletedIds.slice(-300);
+        localStorage.setItem(DELETED_IDS_STORAGE_KEY, JSON.stringify(deletedIds));
+      }
+    }
 
     // 텔레그램 설정 로드
     let telegramConfig = {
       token: '',
       chatId: '',
       notifySchedule: true,
-      notifyExpense: false
+      notifyExpense: false,
+      updatedAt: 0
     };
     try {
       const savedTg = localStorage.getItem(TELEGRAM_CONFIG_KEY);
@@ -890,6 +915,7 @@ alter publication supabase_realtime add table schedules;</pre>
     let expenses = [];
     try {
       expenses = rawExpenses ? JSON.parse(rawExpenses) : [];
+      expenses = expenses.filter(e => e && !String(e.id).startsWith(SCHED_ROW_PREFIX) && String(e.id) !== META_ROW_ID);
     } catch (e) {
       expenses = [];
     }
@@ -1034,14 +1060,16 @@ alter publication supabase_realtime add table schedules;</pre>
       return prog ? prog.isMatured : false;
     }
 
-    // DB <-> 로컬 고정지출 매핑
+    // =========================================================================
+    // ⭐ DB <-> 로컬 객체 매핑 (고정지출 / 일정 / 설정 통합 호환) ⭐
+    // =========================================================================
     function extractOwnerAndMemo(rawOwner, rawMemo) {
       let memo = (rawMemo || '').trim();
       let owner = rawOwner || '';
-      const match = memo.match(/^\[명의:(남편|아내|공동)\]\s*/);
+      const match = memo.match(/^\[명의:([^\]]+)\]\s*/);
       if (match) {
         if (!owner) owner = match[1];
-        memo = memo.replace(/^\[명의:(남편|아내|공동)\]\s*/, '');
+        memo = memo.replace(/^\[명의:[^\]]+\]\s*/, '');
       }
       return { owner: owner || '남편', memo };
     }
@@ -1067,7 +1095,7 @@ alter publication supabase_realtime add table schedules;</pre>
     }
 
     function mapExpenseToDB(item, includeOwnerCol = true) {
-      const cleanMemo = (item.memo || '').replace(/^\[명의:(남편|아내|공동)\]\s*/, '').trim();
+      const cleanMemo = (item.memo || '').replace(/^\[명의:[^\]]+\]\s*/, '').trim();
       const payload = {
         id: String(item.id),
         name: item.name,
@@ -1089,7 +1117,124 @@ alter publication supabase_realtime add table schedules;</pre>
       return payload;
     }
 
-    // DB <-> 일정 매핑
+    // 일정을 fixed_expenses 테이블 행으로 변환 (별도 테이블 없이도 100% 동기화 보장)
+    function mapScheduleToExpenseRow(sched, includeOwnerCol = true) {
+      const rawId = String(sched.id).replace(/^__sched__/, '');
+      const jsonMemo = JSON.stringify({
+        id: rawId,
+        owner: sched.owner || 'husband',
+        title: sched.title || '일정',
+        date: sched.date || todayYMD,
+        timeSlot: sched.timeSlot || 'ALL_DAY',
+        repeat: sched.repeat || 'NONE',
+        tag: sched.tag || null,
+        createdAt: sched.createdAt || new Date().toISOString()
+      });
+      const payload = {
+        id: SCHED_ROW_PREFIX + rawId,
+        name: sched.title || '일정',
+        amount: 0,
+        base_amount: null,
+        is_variable: false,
+        day: 1,
+        category: '__SCHEDULE__',
+        type: '__SCHEDULE__',
+        payment_method: sched.timeSlot || 'ALL_DAY',
+        payment_detail: sched.date || todayYMD,
+        memo: jsonMemo,
+        duration_months: null,
+        start_year_month: sched.repeat || 'NONE'
+      };
+      if (includeOwnerCol) {
+        payload.owner = sched.owner || 'husband';
+      }
+      return payload;
+    }
+
+    function mapScheduleFromExpenseRow(row) {
+      const cleanMemo = (row.memo || '').replace(/^\[명의:[^\]]+\]\s*/, '').trim();
+      try {
+        const parsed = JSON.parse(cleanMemo);
+        if (parsed && parsed.title) {
+          return {
+            id: String(parsed.id || String(row.id).replace(/^__sched__/, '')),
+            owner: parsed.owner || row.owner || 'husband',
+            title: parsed.title,
+            date: parsed.date || row.payment_detail || todayYMD,
+            timeSlot: parsed.timeSlot || row.payment_method || 'ALL_DAY',
+            repeat: parsed.repeat || row.start_year_month || 'NONE',
+            tag: parsed.tag || null,
+            createdAt: parsed.createdAt || new Date().toISOString()
+          };
+        }
+      } catch (e) {}
+      return {
+        id: String(row.id).replace(/^__sched__/, ''),
+        owner: row.owner || 'husband',
+        title: row.name || '일정',
+        date: row.payment_detail || todayYMD,
+        timeSlot: row.payment_method || 'ALL_DAY',
+        repeat: row.start_year_month || 'NONE',
+        tag: null,
+        createdAt: new Date().toISOString()
+      };
+    }
+
+    // 앱 공통 설정(빠른 키워드 & 텔레그램 설정)을 fixed_expenses 행으로 변환
+    function mapMetaToExpenseRow(includeOwnerCol = true) {
+      const jsonMemo = JSON.stringify({
+        quickTags,
+        telegramConfig,
+        updatedAt: Date.now()
+      });
+      const payload = {
+        id: META_ROW_ID,
+        name: '__APP_META__',
+        amount: 0,
+        base_amount: null,
+        is_variable: false,
+        day: 1,
+        category: '__META__',
+        type: '__META__',
+        payment_method: 'meta',
+        payment_detail: '',
+        memo: jsonMemo,
+        duration_months: null,
+        start_year_month: null
+      };
+      if (includeOwnerCol) {
+        payload.owner = '공동';
+      }
+      return payload;
+    }
+
+    function applyMetaFromExpenseRow(row) {
+      if (!row || !row.memo) return false;
+      const cleanMemo = (row.memo || '').replace(/^\[명의:[^\]]+\]\s*/, '').trim();
+      try {
+        const parsed = JSON.parse(cleanMemo);
+        let changed = false;
+        if (Array.isArray(parsed.quickTags) && JSON.stringify(parsed.quickTags) !== JSON.stringify(quickTags)) {
+          quickTags = parsed.quickTags;
+          localStorage.setItem(QUICK_TAGS_STORAGE_KEY, JSON.stringify(quickTags));
+          renderQuickTags();
+          changed = true;
+        }
+        if (parsed.telegramConfig && parsed.telegramConfig.token) {
+          if (JSON.stringify(parsed.telegramConfig) !== JSON.stringify(telegramConfig)) {
+            telegramConfig = { ...telegramConfig, ...parsed.telegramConfig };
+            localStorage.setItem(TELEGRAM_CONFIG_KEY, JSON.stringify(telegramConfig));
+            updateNotifyUI();
+            changed = true;
+          }
+        }
+        return changed;
+      } catch (e) {
+        return false;
+      }
+    }
+
+    // 전용 schedules 테이블용 매핑
     function mapScheduleFromDB(row) {
       return {
         id: String(row.id),
@@ -1145,7 +1290,7 @@ alter publication supabase_realtime add table schedules;</pre>
         banner.className = 'mb-3.5 p-2.5 rounded-xl border flex items-center justify-between text-xs bg-emerald-50 border-emerald-200 text-emerald-950';
         iconWrap.innerHTML = '<i data-lucide="cloud" class="w-4 h-4 text-emerald-600"></i>';
         bannerTitle.textContent = '🟢 부부 실시간 클라우드 동기화 켜짐';
-        bannerDesc.textContent = message || '지출과 일정이 배우자의 스마트폰과 실시간으로 연결되어 있습니다.';
+        bannerDesc.textContent = message || '지출·일정·키워드·알림 설정이 클라우드로 실시간 공유됩니다.';
         headerDot.className = 'w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0';
         headerText.textContent = '실시간 연동중';
         actionBtn.textContent = '연동 관리';
@@ -1174,64 +1319,136 @@ alter publication supabase_realtime add table schedules;</pre>
       lucide.createIcons();
     }
 
-    async function upsertExpensesToCloudWithFallback(itemsArray) {
-      if (!supabaseClient || itemsArray.length === 0) return { error: null };
-      let res = await supabaseClient.from('fixed_expenses').upsert(itemsArray.map(i => mapExpenseToDB(i, cloudSupportsOwnerColumn)));
+    // fixed_expenses 테이블에 배열 업서트 (owner 컬럼 유무 자동 폴백)
+    async function upsertRowsToFixedExpensesTable(dbRowsBuilder) {
+      if (!supabaseClient) return { error: { message: '클라우드 미연결' } };
+      let rows = dbRowsBuilder(cloudSupportsOwnerColumn);
+      if (!rows || rows.length === 0) return { error: null };
+      let res = await supabaseClient.from('fixed_expenses').upsert(rows);
       if (res.error && cloudSupportsOwnerColumn && String(res.error.message || '').includes('owner')) {
         cloudSupportsOwnerColumn = false;
-        res = await supabaseClient.from('fixed_expenses').upsert(itemsArray.map(i => mapExpenseToDB(i, false)));
+        rows = dbRowsBuilder(false);
+        res = await supabaseClient.from('fixed_expenses').upsert(rows);
       }
       return res;
     }
 
-    async function upsertScheduleToCloud(schedObj) {
-      if (!supabaseClient) return { error: null };
-      return await supabaseClient.from('schedules').upsert([mapScheduleToDB(schedObj)]);
+    async function upsertExpensesToCloudWithFallback(itemsArray) {
+      if (!itemsArray || itemsArray.length === 0) return { error: null };
+      return await upsertRowsToFixedExpensesTable(includeOwner =>
+        itemsArray.map(i => mapExpenseToDB(i, includeOwner))
+      );
     }
 
-    async function deleteScheduleFromCloud(id) {
-      if (!supabaseClient) return { error: null };
-      return await supabaseClient.from('schedules').delete().eq('id', id);
+    async function upsertSchedulesToCloudWithFallback(schedsArray) {
+      if (!schedsArray || schedsArray.length === 0) return { error: null };
+      // 1. 항상 fixed_expenses 테이블 내 __sched__ 행으로 저장 (테이블 미생성 환경에서도 100% 성공 보장)
+      const res = await upsertRowsToFixedExpensesTable(includeOwner =>
+        schedsArray.map(s => mapScheduleToExpenseRow(s, includeOwner))
+      );
+      // 2. 만약 전용 schedules 테이블도 존재한다면 함께 동기화
+      if (cloudHasSchedulesTable && supabaseClient) {
+        try {
+          await supabaseClient.from('schedules').upsert(schedsArray.map(mapScheduleToDB));
+        } catch (e) {}
+      }
+      return res;
     }
 
-    // 클라우드 전체 데이터 동기화 함수
+    async function syncMetaToCloud() {
+      if (!supabaseClient) return;
+      lockMutation();
+      try {
+        await upsertRowsToFixedExpensesTable(includeOwner => [mapMetaToExpenseRow(includeOwner)]);
+      } finally {
+        unlockMutationAfter(800);
+      }
+    }
+
+    // 고정지출 및 일정 배열 정규화 비교용 헬퍼
+    function serializeById(arr) {
+      return JSON.stringify([...arr].sort((a, b) => String(a.id).localeCompare(String(b.id))));
+    }
+
+    // 클라우드 전체 데이터 가져오기 (Race condition 방지 적용)
     async function pullLatestFromCloud(showNotificationOnDiff = false) {
       if (!supabaseClient || isLocalMutating) return;
-      try {
-        let hasDiff = false;
+      const myVersion = mutationVersion;
 
-        const { data: expData, error: expErr } = await supabaseClient
+      try {
+        const { data: allRows, error: expErr } = await supabaseClient
           .from('fixed_expenses')
           .select('*')
           .order('day', { ascending: true });
 
-        if (!expErr && expData) {
-          const remoteMappedExp = expData.map(mapExpenseFromDB);
-          if (JSON.stringify(expenses) !== JSON.stringify(remoteMappedExp)) {
-            expenses = remoteMappedExp;
-            localStorage.setItem(EXPENSES_STORAGE_KEY, JSON.stringify(expenses));
-            hasDiff = true;
+        // 네트워크 대기 중 사용자가 로컬 저장/삭제를 수행했다면 덮어쓰기 중단
+        if (isLocalMutating || myVersion !== mutationVersion) return;
+        if (expErr || !allRows) return;
+
+        let hasDiff = false;
+
+        // 1. 일반 고정지출 행 분리
+        const rawExpenseRows = allRows.filter(r =>
+          !String(r.id).startsWith(SCHED_ROW_PREFIX) &&
+          String(r.id) !== META_ROW_ID &&
+          r.category !== '__SCHEDULE__' &&
+          r.category !== '__META__'
+        );
+        const remoteMappedExp = rawExpenseRows
+          .map(mapExpenseFromDB)
+          .filter(e => !deletedIds.includes(String(e.id)));
+
+        if (serializeById(expenses) !== serializeById(remoteMappedExp)) {
+          expenses = remoteMappedExp;
+          localStorage.setItem(EXPENSES_STORAGE_KEY, JSON.stringify(expenses));
+          hasDiff = true;
+        }
+
+        // 2. fixed_expenses 내 저장된 일정 행(__sched__) 분리
+        const rawSchedRows = allRows.filter(r =>
+          String(r.id).startsWith(SCHED_ROW_PREFIX) || r.category === '__SCHEDULE__'
+        );
+        const schedMap = new Map();
+        rawSchedRows.forEach(r => {
+          const s = mapScheduleFromExpenseRow(r);
+          if (!deletedIds.includes(String(s.id))) {
+            schedMap.set(String(s.id), s);
+          }
+        });
+
+        // 만약 전용 schedules 테이블도 활성화되어 있다면 병합
+        if (cloudHasSchedulesTable) {
+          const { data: dedicatedScheds, error: sErr } = await supabaseClient
+            .from('schedules')
+            .select('*');
+          if (isLocalMutating || myVersion !== mutationVersion) return;
+          if (!sErr && dedicatedScheds) {
+            dedicatedScheds.forEach(r => {
+              const s = mapScheduleFromDB(r);
+              if (!deletedIds.includes(String(s.id))) {
+                schedMap.set(String(s.id), s);
+              }
+            });
           }
         }
 
-        const { data: schedData, error: schedErr } = await supabaseClient
-          .from('schedules')
-          .select('*')
-          .order('date', { ascending: true });
+        const remoteMappedSched = Array.from(schedMap.values());
+        if (serializeById(schedules) !== serializeById(remoteMappedSched)) {
+          schedules = remoteMappedSched;
+          localStorage.setItem(SCHEDULES_STORAGE_KEY, JSON.stringify(schedules));
+          hasDiff = true;
+        }
 
-        if (!schedErr && schedData) {
-          const remoteMappedSched = schedData.map(mapScheduleFromDB);
-          if (JSON.stringify(schedules) !== JSON.stringify(remoteMappedSched)) {
-            schedules = remoteMappedSched;
-            localStorage.setItem(SCHEDULES_STORAGE_KEY, JSON.stringify(schedules));
-            hasDiff = true;
-          }
+        // 3. 메타 행(__app_meta__) 반영 (키워드 및 텔레그램 설정)
+        const metaRow = allRows.find(r => String(r.id) === META_ROW_ID || r.category === '__META__');
+        if (metaRow && applyMetaFromExpenseRow(metaRow)) {
+          hasDiff = true;
         }
 
         if (hasDiff) {
           renderAll();
           if (showNotificationOnDiff) {
-            showToast('배우자의 변경 사항이 자동 반영되었습니다! 🔄');
+            showToast('클라우드 변경 사항이 자동 반영되었습니다! 🔄');
           }
         }
       } catch (e) {}
@@ -1253,6 +1470,7 @@ alter publication supabase_realtime add table schedules;</pre>
       }
     }
 
+    // 앱 초기 구동 및 수동 동기화 시 로컬+클라우드 양방향 스마트 병합
     async function initSupabaseSync() {
       const cfg = getStoredSupabaseConfig();
       if (!cfg.url || !cfg.key || !cfg.url.includes('supabase.co')) {
@@ -1270,63 +1488,116 @@ alter publication supabase_realtime add table schedules;</pre>
           auth: { persistSession: false }
         });
 
-        const { data: expData, error: expErr } = await supabaseClient
+        const { data: allRows, error: expErr } = await supabaseClient
           .from('fixed_expenses')
           .select('*')
           .order('day', { ascending: true });
 
         if (expErr) throw expErr;
 
-        const alreadyMigrated = localStorage.getItem(MIGRATED_FLAG_KEY) === 'true';
-
-        if (expData && expData.length > 0) {
-          expenses = expData.map(mapExpenseFromDB);
-          localStorage.setItem(EXPENSES_STORAGE_KEY, JSON.stringify(expenses));
-          localStorage.setItem(MIGRATED_FLAG_KEY, 'true');
-        } else if (expData && expData.length === 0) {
-          if (!alreadyMigrated && expenses.length > 0) {
-            isLocalMutating = true;
-            await upsertExpensesToCloudWithFallback(expenses);
-            setTimeout(() => { isLocalMutating = false; }, 600);
-          } else {
-            expenses = [];
-            localStorage.setItem(EXPENSES_STORAGE_KEY, JSON.stringify(expenses));
+        // 전용 schedules 테이블 존재 여부 점검 (선택 사항)
+        let dedicatedSchedRows = [];
+        try {
+          const { data: sData, error: sErr } = await supabaseClient
+            .from('schedules')
+            .select('*');
+          if (!sErr && Array.isArray(sData)) {
+            cloudHasSchedulesTable = true;
+            dedicatedSchedRows = sData;
           }
-          localStorage.setItem(MIGRATED_FLAG_KEY, 'true');
+        } catch (e) {
+          cloudHasSchedulesTable = false;
         }
 
-        try {
-          const { data: schedData, error: schedErr } = await supabaseClient
-            .from('schedules')
-            .select('*')
-            .order('date', { ascending: true });
-
-          if (!schedErr && schedData) {
-            if (schedData.length > 0) {
-              schedules = schedData.map(mapScheduleFromDB);
-              localStorage.setItem(SCHEDULES_STORAGE_KEY, JSON.stringify(schedules));
-            } else if (schedules.length > 0) {
-              await supabaseClient.from('schedules').upsert(schedules.map(mapScheduleToDB));
-            }
+        // --- 1. 고정지출 양방향 병합 ---
+        const rawExpenseRows = (allRows || []).filter(r =>
+          !String(r.id).startsWith(SCHED_ROW_PREFIX) &&
+          String(r.id) !== META_ROW_ID &&
+          r.category !== '__SCHEDULE__' &&
+          r.category !== '__META__'
+        );
+        const cloudExpMap = new Map();
+        rawExpenseRows.forEach(r => {
+          const item = mapExpenseFromDB(r);
+          if (!deletedIds.includes(String(item.id))) {
+            cloudExpMap.set(String(item.id), item);
           }
-        } catch (sErr) {
-          console.debug('schedules table pending creation.', sErr);
+        });
+
+        const localOnlyExpenses = [];
+        expenses.forEach(localItem => {
+          const idStr = String(localItem.id);
+          if (!deletedIds.includes(idStr) && !cloudExpMap.has(idStr)) {
+            cloudExpMap.set(idStr, localItem);
+            localOnlyExpenses.push(localItem);
+          }
+        });
+
+        expenses = Array.from(cloudExpMap.values());
+        localStorage.setItem(EXPENSES_STORAGE_KEY, JSON.stringify(expenses));
+
+        if (localOnlyExpenses.length > 0) {
+          lockMutation();
+          await upsertExpensesToCloudWithFallback(localOnlyExpenses);
+          unlockMutationAfter(800);
+        }
+
+        // --- 2. 부부 일정 양방향 병합 ---
+        const rawSchedRows = (allRows || []).filter(r =>
+          String(r.id).startsWith(SCHED_ROW_PREFIX) || r.category === '__SCHEDULE__'
+        );
+        const cloudSchedMap = new Map();
+        rawSchedRows.forEach(r => {
+          const s = mapScheduleFromExpenseRow(r);
+          if (!deletedIds.includes(String(s.id))) {
+            cloudSchedMap.set(String(s.id), s);
+          }
+        });
+        dedicatedSchedRows.forEach(r => {
+          const s = mapScheduleFromDB(r);
+          if (!deletedIds.includes(String(s.id))) {
+            cloudSchedMap.set(String(s.id), s);
+          }
+        });
+
+        const localOnlySchedules = [];
+        schedules.forEach(localSched => {
+          const idStr = String(localSched.id);
+          if (!deletedIds.includes(idStr) && !cloudSchedMap.has(idStr)) {
+            cloudSchedMap.set(idStr, localSched);
+            localOnlySchedules.push(localSched);
+          }
+        });
+
+        schedules = Array.from(cloudSchedMap.values());
+        localStorage.setItem(SCHEDULES_STORAGE_KEY, JSON.stringify(schedules));
+
+        // 클라우드에 아직 올라가지 않았던 로컬 일정들을 즉시 업로드
+        if (localOnlySchedules.length > 0) {
+          lockMutation();
+          await upsertSchedulesToCloudWithFallback(localOnlySchedules);
+          unlockMutationAfter(800);
+        }
+
+        // --- 3. 메타 데이터(키워드, 텔레그램 설정) 동기화 ---
+        const metaRow = (allRows || []).find(r => String(r.id) === META_ROW_ID || r.category === '__META__');
+        if (metaRow) {
+          applyMetaFromExpenseRow(metaRow);
+        } else if (telegramConfig.token || quickTags.length > 0) {
+          await syncMetaToCloud();
         }
 
         renderAll();
         updateSyncUI('connected');
         startSmartPolling();
 
+        // 실시간 WebSocket 구독
         try {
           if (typeof window.WebSocket !== 'undefined') {
             if (realtimeChannel) supabaseClient.removeChannel(realtimeChannel);
             realtimeChannel = supabaseClient
               .channel('realtime_app_changes')
               .on('postgres_changes', { event: '*', schema: 'public', table: 'fixed_expenses' }, async () => {
-                if (isLocalMutating) return;
-                await pullLatestFromCloud(true);
-              })
-              .on('postgres_changes', { event: '*', schema: 'public', table: 'schedules' }, async () => {
                 if (isLocalMutating) return;
                 await pullLatestFromCloud(true);
               })
@@ -1344,61 +1615,78 @@ alter publication supabase_realtime add table schedules;</pre>
     }
 
     document.addEventListener('visibilitychange', () => {
-      if (!document.hidden && supabaseClient) {
+      if (!document.hidden && supabaseClient && !isLocalMutating) {
         pullLatestFromCloud(true);
       }
     });
 
     // 고정지출 저장 및 삭제
     async function syncSaveItem(item, isNew = false) {
-      const idx = expenses.findIndex(i => i.id === item.id);
+      const idx = expenses.findIndex(i => String(i.id) === String(item.id));
       if (idx !== -1) expenses[idx] = item;
       else expenses.push(item);
 
       localStorage.setItem(EXPENSES_STORAGE_KEY, JSON.stringify(expenses));
       renderExpenseSection();
 
+      let cloudOk = false;
+      let errMsg = '';
       if (supabaseClient) {
-        isLocalMutating = true;
-        const { error } = await upsertExpensesToCloudWithFallback([item]);
-        setTimeout(() => { isLocalMutating = false; }, 600);
-        if (error) showToast('⚠️ 클라우드 전송 실패: ' + error.message);
+        lockMutation();
+        try {
+          const { error } = await upsertExpensesToCloudWithFallback([item]);
+          if (error) errMsg = error.message;
+          else cloudOk = true;
+        } finally {
+          unlockMutationAfter(1200);
+        }
       }
 
-      // 텔레그램 고정지출 알림 옵션
       if (telegramConfig.notifyExpense && isNew) {
         const text = `💸 <b>[부부 가계부] 새 고정지출 등록</b>\n• 항목: ${item.name}\n• 금액: ${item.amount.toLocaleString()}원\n• 출금일: 매월 ${item.day}일\n• 명의: ${item.owner || '남편'}`;
         sendTelegramMessage(text);
       }
+
+      return { cloudOk, errMsg };
     }
 
     async function syncDeleteItem(id) {
-      expenses = expenses.filter(i => i.id !== id);
+      markIdDeleted(id);
+      expenses = expenses.filter(i => String(i.id) !== String(id));
       localStorage.setItem(EXPENSES_STORAGE_KEY, JSON.stringify(expenses));
       renderExpenseSection();
 
       if (supabaseClient) {
-        isLocalMutating = true;
-        const { error } = await supabaseClient.from('fixed_expenses').delete().eq('id', id);
-        setTimeout(() => { isLocalMutating = false; }, 600);
-        if (error) showToast('⚠️ 클라우드 삭제 실패: ' + error.message);
+        lockMutation();
+        try {
+          const { error } = await supabaseClient.from('fixed_expenses').delete().eq('id', String(id));
+          if (error) showToast('⚠️ 클라우드 삭제 실패: ' + error.message);
+        } finally {
+          unlockMutationAfter(1200);
+        }
       }
     }
 
     // 부부 일정 저장 및 삭제
     async function syncSaveSchedule(schedObj, isEdit = false) {
-      const idx = schedules.findIndex(s => s.id === schedObj.id);
+      const idx = schedules.findIndex(s => String(s.id) === String(schedObj.id));
       if (idx !== -1) schedules[idx] = schedObj;
       else schedules.push(schedObj);
 
       localStorage.setItem(SCHEDULES_STORAGE_KEY, JSON.stringify(schedules));
       renderScheduleSection();
 
+      let cloudOk = false;
+      let errMsg = '';
       if (supabaseClient) {
-        isLocalMutating = true;
-        const { error } = await upsertScheduleToCloud(schedObj);
-        setTimeout(() => { isLocalMutating = false; }, 600);
-        if (error) showToast('⚠️ 일정 클라우드 전송 실패 (SQL 설정을 확인해주세요)');
+        lockMutation();
+        try {
+          const { error } = await upsertSchedulesToCloudWithFallback([schedObj]);
+          if (error) errMsg = error.message;
+          else cloudOk = true;
+        } finally {
+          unlockMutationAfter(1200);
+        }
       }
 
       // 텔레그램 단톡방 알림 발송
@@ -1412,19 +1700,32 @@ alter publication supabase_realtime add table schedules;</pre>
 
         sendTelegramMessage(msg);
       }
+
+      return { cloudOk, errMsg };
     }
 
     async function syncDeleteSchedule(id) {
-      const target = schedules.find(s => s.id === id);
-      schedules = schedules.filter(s => s.id !== id);
+      const cleanId = String(id).replace(/^__sched__/, '');
+      markIdDeleted(cleanId);
+      const target = schedules.find(s => String(s.id) === cleanId);
+      schedules = schedules.filter(s => String(s.id) !== cleanId);
       localStorage.setItem(SCHEDULES_STORAGE_KEY, JSON.stringify(schedules));
       renderScheduleSection();
 
       if (supabaseClient) {
-        isLocalMutating = true;
-        const { error } = await deleteScheduleFromCloud(id);
-        setTimeout(() => { isLocalMutating = false; }, 600);
-        if (error) showToast('⚠️ 일정 클라우드 삭제 실패: ' + error.message);
+        lockMutation();
+        try {
+          const { error } = await supabaseClient
+            .from('fixed_expenses')
+            .delete()
+            .in('id', [SCHED_ROW_PREFIX + cleanId, cleanId]);
+          if (cloudHasSchedulesTable) {
+            try { await supabaseClient.from('schedules').delete().eq('id', cleanId); } catch (e) {}
+          }
+          if (error) showToast('⚠️ 일정 클라우드 삭제 실패: ' + error.message);
+        } finally {
+          unlockMutationAfter(1200);
+        }
       }
 
       // 텔레그램 삭제 알림
@@ -1444,7 +1745,7 @@ alter publication supabase_realtime add table schedules;</pre>
       toastTimer = setTimeout(() => {
         toast.classList.add('opacity-0', 'pointer-events-none', 'translate-y-[-10px]');
         toast.classList.remove('opacity-100', 'translate-y-0');
-      }, 2500);
+      }, 2800);
     }
 
     function formatKoreanAmount(num) {
@@ -2346,16 +2647,12 @@ alter publication supabase_realtime add table schedules;</pre>
         return;
       }
 
-      // 오늘 일정 집계
       const todayDateObj = new Date(today);
       const todayScheds = schedules.filter(s => isScheduleActiveOnDate(s, todayYMD, todayDateObj));
-
-      // 오늘 출금 예정 고정지출 집계
       const todayExps = expenses.filter(i => !checkIsMatured(i) && getEffectiveDay(i.day) === currentDay);
 
       let msg = `☀️ <b>[부부 플래너] 오늘의 브리핑 (${currentMonth}월 ${currentDay}일)</b>\n\n`;
 
-      // 1. 일정 영역
       msg += `📅 <b>오늘의 부부 일정 (${todayScheds.length}건):</b>\n`;
       if (todayScheds.length === 0) {
         msg += `• 등록된 일정이 없습니다. 편안한 하루 보내세요! 😊\n`;
@@ -2367,7 +2664,6 @@ alter publication supabase_realtime add table schedules;</pre>
         });
       }
 
-      // 2. 가계 지출 영역
       msg += `\n💸 <b>오늘 출금 예정 고정지출:</b>\n`;
       if (todayExps.length === 0) {
         msg += `• 오늘 예정된 출금이 없습니다 ✓\n`;
@@ -2441,17 +2737,19 @@ alter publication supabase_realtime add table schedules;</pre>
       }
     });
 
-    $('notifyConfigForm').addEventListener('submit', (e) => {
+    $('notifyConfigForm').addEventListener('submit', async (e) => {
       e.preventDefault();
       telegramConfig.token = $('cfgTgToken').value.trim();
       telegramConfig.chatId = $('cfgTgChatId').value.trim();
       telegramConfig.notifySchedule = $('cfgTgNotifySchedule').checked;
       telegramConfig.notifyExpense = $('cfgTgNotifyExpense').checked;
+      telegramConfig.updatedAt = Date.now();
 
       localStorage.setItem(TELEGRAM_CONFIG_KEY, JSON.stringify(telegramConfig));
       updateNotifyUI();
       closeNotifyModal();
-      showToast('텔레그램 알림 설정이 저장되었습니다! 🔔');
+      await syncMetaToCloud();
+      showToast('텔레그램 알림 설정이 클라우드에 저장되었습니다! 🔔');
     });
 
     // 지난 일정 모달
@@ -2497,7 +2795,7 @@ alter publication supabase_realtime add table schedules;</pre>
       const copyBtn = e.target.closest('.copy-past-sched-btn');
       if (copyBtn) {
         const id = copyBtn.dataset.schedid;
-        const it = schedules.find(s => s.id === id);
+        const it = schedules.find(s => String(s.id) === String(id));
         if (it) {
           closePastSchedulesModal();
           openScheduleModal(null, todayYMD);
@@ -2520,7 +2818,7 @@ alter publication supabase_realtime add table schedules;</pre>
       const delBtn = e.target.closest('.delete-schedule-btn');
       if (delBtn) {
         const id = delBtn.dataset.schedid;
-        const it = schedules.find(s => s.id === id);
+        const it = schedules.find(s => String(s.id) === String(id));
 
         if (pendingScheduleDeleteId !== id) {
           pendingScheduleDeleteId = id;
@@ -2566,11 +2864,12 @@ alter publication supabase_realtime add table schedules;</pre>
         delBtn.className = 'px-1 py-1 text-slate-300 hover:text-rose-600 hover:bg-rose-50 border-l border-slate-100 transition';
         delBtn.title = '키워드 삭제';
         delBtn.innerHTML = '&times;';
-        delBtn.addEventListener('click', (e) => {
+        delBtn.addEventListener('click', async (e) => {
           e.stopPropagation();
           quickTags.splice(idx, 1);
           localStorage.setItem(QUICK_TAGS_STORAGE_KEY, JSON.stringify(quickTags));
           renderQuickTags();
+          await syncMetaToCloud();
         });
 
         wrap.appendChild(tagBtn);
@@ -2579,7 +2878,7 @@ alter publication supabase_realtime add table schedules;</pre>
       });
     }
 
-    $('addNewTagBtn').addEventListener('click', () => {
+    $('addNewTagBtn').addEventListener('click', async () => {
       const input = $('newTagInput');
       const val = input.value.trim();
       if (!val) return;
@@ -2591,7 +2890,8 @@ alter publication supabase_realtime add table schedules;</pre>
       localStorage.setItem(QUICK_TAGS_STORAGE_KEY, JSON.stringify(quickTags));
       input.value = '';
       renderQuickTags();
-      showToast(`'${val}' 키워드가 추가되었습니다!`);
+      await syncMetaToCloud();
+      showToast(`'${val}' 키워드가 추가 및 클라우드 공유되었습니다!`);
     });
 
     $('newTagInput').addEventListener('keydown', (e) => {
@@ -2656,7 +2956,7 @@ alter publication supabase_realtime add table schedules;</pre>
       renderQuickTags();
 
       if (editId) {
-        const item = schedules.find(s => s.id === editId);
+        const item = schedules.find(s => String(s.id) === String(editId));
         if (!item) return;
         $('scheduleModalTitle').textContent = '부부 일정 수정';
         $('schedId').value = item.id;
@@ -2703,7 +3003,7 @@ alter publication supabase_realtime add table schedules;</pre>
       }
 
       const scheduleObj = {
-        id,
+        id: String(id).replace(/^__sched__/, ''),
         title,
         date,
         owner,
@@ -2712,9 +3012,17 @@ alter publication supabase_realtime add table schedules;</pre>
         createdAt: new Date().toISOString()
       };
 
-      await syncSaveSchedule(scheduleObj, isEdit);
-      showToast(repeat !== 'NONE' ? `반복 일정이 등록되었습니다! 🔁` : '일정이 저장되었습니다! 📅');
       closeScheduleModal();
+      const { cloudOk, errMsg } = await syncSaveSchedule(scheduleObj, isEdit);
+      if (supabaseClient) {
+        if (cloudOk) {
+          showToast(repeat !== 'NONE' ? '☁️ 반복 일정 클라우드 동기화 완료! 🔁' : '☁️ 일정 클라우드 동기화 완료! 📅');
+        } else {
+          showToast(`⚠️ 폰에만 임시 저장됨 (클라우드 오류: ${errMsg})`);
+        }
+      } else {
+        showToast('일정이 폰에 저장되었습니다! 📅');
+      }
     });
 
     $('scheduleTimelineContainer').addEventListener('click', async (e) => {
@@ -2734,7 +3042,7 @@ alter publication supabase_realtime add table schedules;</pre>
       const delBtn = e.target.closest('.delete-schedule-btn');
       if (delBtn) {
         const id = delBtn.dataset.schedid;
-        const it = schedules.find(s => s.id === id);
+        const it = schedules.find(s => String(s.id) === String(id));
 
         if (pendingScheduleDeleteId !== id) {
           pendingScheduleDeleteId = id;
@@ -2751,7 +3059,7 @@ alter publication supabase_realtime add table schedules;</pre>
         pendingScheduleDeleteId = null;
         if (pendingScheduleDeleteTimer) clearTimeout(pendingScheduleDeleteTimer);
         await syncDeleteSchedule(id);
-        showToast('일정이 삭제되었습니다.');
+        showToast('☁️ 일정이 삭제 및 동기화되었습니다.');
       }
     });
 
@@ -2875,7 +3183,7 @@ alter publication supabase_realtime add table schedules;</pre>
       $('moreOptionsDetails').removeAttribute('open');
 
       if (editId) {
-        const item = expenses.find(i => i.id === editId);
+        const item = expenses.find(i => String(i.id) === String(editId));
         if (!item) return;
         $('modalTitle').textContent = '항목 수정';
         $('itemId').value = item.id;
@@ -2955,7 +3263,7 @@ alter publication supabase_realtime add table schedules;</pre>
 
       const fixed = currentDurationMode === 'fixed';
       const itemObj = {
-        id,
+        id: String(id),
         name,
         amount,
         day,
@@ -2971,9 +3279,14 @@ alter publication supabase_realtime add table schedules;</pre>
         startYearMonth: fixed ? ($('itemStartYearMonth').value || null) : null
       };
 
-      await syncSaveItem(itemObj, isNew);
-      showToast('저장 완료되었습니다.');
       closeModal();
+      const { cloudOk, errMsg } = await syncSaveItem(itemObj, isNew);
+      if (supabaseClient) {
+        if (cloudOk) showToast('☁️ 고정 항목 클라우드 동기화 완료!');
+        else showToast(`⚠️ 폰에만 임시 저장됨 (${errMsg})`);
+      } else {
+        showToast('저장 완료되었습니다.');
+      }
     });
 
     // 1초 빠른 금액 수정 모달
@@ -3017,20 +3330,20 @@ alter publication supabase_realtime add table schedules;</pre>
       e.preventDefault();
       const id = $('quickAmtItemId').value;
       const newAmt = Number($('quickAmtInput').value);
-      const it = expenses.find(i => i.id === id);
+      const it = expenses.find(i => String(i.id) === String(id));
+      closeQuickAmtModal();
       if (it && newAmt > 0) {
         const updatedBase = (it.isVariable && !it.baseAmount) ? it.amount : it.baseAmount;
         await syncSaveItem({ ...it, amount: newAmt, baseAmount: updatedBase }, false);
-        showToast(`'${it.name}' 금액이 ${newAmt.toLocaleString()}원으로 갱신되었습니다.`);
+        showToast(`☁️ '${it.name}' 금액이 ${newAmt.toLocaleString()}원으로 동기화되었습니다.`);
       }
-      closeQuickAmtModal();
     });
 
     // 고정지출 리스트 클릭 이벤트
     $('expenseList').addEventListener('click', async (e) => {
       const q = e.target.closest('.quick-amount-edit-btn');
       if (q) {
-        const it = expenses.find(i => i.id === q.dataset.id);
+        const it = expenses.find(i => String(i.id) === String(q.dataset.id));
         if (it) openQuickAmtModal(it);
         return;
       }
@@ -3039,7 +3352,7 @@ alter publication supabase_realtime add table schedules;</pre>
       const editBtn = e.target.closest('.edit-btn');
       if (delBtn) {
         const targetId = delBtn.dataset.id;
-        const it = expenses.find(i => i.id === targetId);
+        const it = expenses.find(i => String(i.id) === String(targetId));
 
         if (pendingDeleteId !== targetId) {
           pendingDeleteId = targetId;
@@ -3055,17 +3368,18 @@ alter publication supabase_realtime add table schedules;</pre>
         pendingDeleteId = null;
         if (pendingDeleteTimer) clearTimeout(pendingDeleteTimer);
         await syncDeleteItem(targetId);
-        showToast('삭제되었습니다.');
+        showToast('☁️ 삭제 및 클라우드 동기화 완료!');
       } else if (editBtn) {
         openModal(editBtn.dataset.id);
       }
     });
 
+    // 수동 양방향 전체 동기화 버튼
     $('manualRefreshBtn').addEventListener('click', async () => {
       if (!supabaseClient) return;
-      showToast('클라우드 데이터를 최신 상태로 확인합니다...');
-      await pullLatestFromCloud(false);
-      showToast('최신 데이터 동기화 완료 ✓');
+      showToast('클라우드와 양방향 동기화를 진행 중입니다...');
+      await initSupabaseSync();
+      showToast('☁️ 최신 데이터 양방향 동기화 완료 ✓');
     });
 
     function openSyncModal() {
@@ -3164,9 +3478,10 @@ alter publication supabase_realtime add table schedules;</pre>
       const backupData = {
         expenses,
         schedules,
+        quickTags,
         telegramConfig,
         exportedAt: new Date().toISOString(),
-        version: 'v4.2'
+        version: 'v4.3'
       };
       const blob = new Blob([JSON.stringify(backupData, null, 2)], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
@@ -3185,6 +3500,9 @@ alter publication supabase_realtime add table schedules;</pre>
       reader.onload = async (event) => {
         try {
           const imported = JSON.parse(event.target.result);
+          deletedIds = [];
+          localStorage.setItem(DELETED_IDS_STORAGE_KEY, JSON.stringify([]));
+
           if (Array.isArray(imported)) {
             expenses = imported.map(it => ({
               ...it,
@@ -3195,31 +3513,40 @@ alter publication supabase_realtime add table schedules;</pre>
             }));
             localStorage.setItem(EXPENSES_STORAGE_KEY, JSON.stringify(expenses));
             if (supabaseClient && expenses.length > 0) {
-              isLocalMutating = true;
+              lockMutation();
               await upsertExpensesToCloudWithFallback(expenses);
-              setTimeout(() => { isLocalMutating = false; }, 600);
+              unlockMutationAfter(1200);
             }
-            showToast(`고정지출 ${expenses.length}건이 복원되었습니다.`);
+            showToast(`고정지출 ${expenses.length}건이 복원 및 동기화되었습니다.`);
           } else if (imported && typeof imported === 'object') {
             if (Array.isArray(imported.expenses)) {
               expenses = imported.expenses;
               localStorage.setItem(EXPENSES_STORAGE_KEY, JSON.stringify(expenses));
               if (supabaseClient && expenses.length > 0) {
+                lockMutation();
                 await upsertExpensesToCloudWithFallback(expenses);
+                unlockMutationAfter(1200);
               }
             }
             if (Array.isArray(imported.schedules)) {
               schedules = imported.schedules;
               localStorage.setItem(SCHEDULES_STORAGE_KEY, JSON.stringify(schedules));
               if (supabaseClient && schedules.length > 0) {
-                await supabaseClient.from('schedules').upsert(schedules.map(mapScheduleToDB));
+                lockMutation();
+                await upsertSchedulesToCloudWithFallback(schedules);
+                unlockMutationAfter(1200);
               }
+            }
+            if (Array.isArray(imported.quickTags)) {
+              quickTags = imported.quickTags;
+              localStorage.setItem(QUICK_TAGS_STORAGE_KEY, JSON.stringify(quickTags));
             }
             if (imported.telegramConfig) {
               telegramConfig = { ...telegramConfig, ...imported.telegramConfig };
               localStorage.setItem(TELEGRAM_CONFIG_KEY, JSON.stringify(telegramConfig));
             }
-            showToast(`통합 데이터 (지출 ${expenses.length}건, 일정 ${schedules.length}건) 복원 완료!`);
+            await syncMetaToCloud();
+            showToast(`통합 데이터 (지출 ${expenses.length}건, 일정 ${schedules.length}건) 클라우드 복원 완료!`);
           }
           renderAll();
         } catch (err) {
