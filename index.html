@@ -178,6 +178,49 @@
         </div>
       </section>
 
+      <!-- ⭐ [신규 추가] 계좌이체 전용(신용카드 제외) 특정일 필요 잔고 & 이체 전날(D-1) 텔레그램 알림 센터 ⭐ -->
+      <section id="accountD1AlertSection" class="bg-gradient-to-br from-sky-50/90 via-white to-indigo-50/60 rounded-2xl border border-sky-200 p-4 shadow-sm space-y-3">
+        <div class="flex items-start justify-between gap-2 flex-wrap">
+          <div class="flex items-center gap-2 min-w-0">
+            <div class="w-8 h-8 rounded-xl bg-sky-500 text-white flex items-center justify-center shrink-0 shadow-xs">
+              <i data-lucide="bell-ring" class="w-4 h-4"></i>
+            </div>
+            <div class="min-w-0">
+              <div class="flex items-center gap-1.5 flex-wrap">
+                <h2 class="text-xs sm:text-sm font-bold text-slate-900">계좌별 · 특정일 필요 잔고 &amp; 이체 전날(D-1) 알림</h2>
+                <span class="text-[10px] bg-sky-100 text-sky-800 border border-sky-200 px-1.5 py-0.5 rounded-md font-bold">💳 신용카드 제외 · 🏦 계좌이체만 합산</span>
+              </div>
+              <p class="text-[11px] text-slate-500 mt-0.5" id="d1AutoStatusText">이체일 하루 전(D-1) 계좌별 필요 잔고를 합산해 텔레그램으로 자동 알림을 보냅니다.</p>
+            </div>
+          </div>
+          <div class="flex items-center gap-1.5 ml-auto shrink-0">
+            <button type="button" id="sendD1AlertNowBtn" class="px-2.5 py-1.5 bg-sky-500 hover:bg-sky-600 text-white rounded-xl text-[11px] font-bold shadow-xs transition flex items-center gap-1">
+              <i data-lucide="send" class="w-3 h-3"></i>
+              <span id="sendD1AlertNowBtnText">이체 전날(D-1) 알림 쏘기</span>
+            </button>
+            <button type="button" id="sendAllAccountScheduleTgBtn" class="px-2.5 py-1.5 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 rounded-xl text-[11px] font-bold shadow-xs transition flex items-center gap-1" title="이번 달 계좌별·특정일별 필요 잔고 전체 스케줄을 텔레그램으로 전송">
+              <i data-lucide="list-checks" class="w-3 h-3 text-indigo-600"></i>
+              <span>계좌별 잔고표 전송</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- 내일(D-1) 당장 이체 예정인 계좌 긴급 브리핑 박스 -->
+        <div id="tomorrowTransferAlertBox" class="p-3 rounded-xl border text-xs"></div>
+
+        <!-- 이번 달 각 계좌별 · 특정일별 필요 잔고 타임라인 (신용카드 제외) -->
+        <div class="bg-white/90 rounded-xl border border-slate-200/90 p-3 space-y-2">
+          <div class="flex items-center justify-between">
+            <span class="text-[11px] font-bold text-slate-800 flex items-center gap-1">
+              <i data-lucide="calendar-check-2" class="w-3.5 h-3.5 text-indigo-600"></i>
+              <span>특정일별 · 계좌별 준비해야 할 최소 잔고 (오늘 이후 계좌이체 합산)</span>
+            </span>
+            <span id="accountOnlyCountBadge" class="text-[10px] font-semibold text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded">계좌이체 0건</span>
+          </div>
+          <div id="accountDateBalanceList" class="space-y-1.5 max-h-64 overflow-y-auto pr-0.5"></div>
+        </div>
+      </section>
+
       <!-- 계좌별 · 일자별 필요 자금 브리핑 -->
       <section class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm">
         <div class="flex items-center justify-between mb-3">
@@ -389,6 +432,10 @@
         </div>
 
         <div class="bg-sky-50/70 p-2.5 rounded-xl border border-sky-100 space-y-1.5 text-[11px] text-slate-700">
+          <label class="flex items-center gap-2 cursor-pointer">
+            <input type="checkbox" id="cfgTgNotifyAccountD1" checked class="rounded text-sky-600 focus:ring-sky-500" />
+            <span class="font-bold text-indigo-900">🏦 계좌이체 전날(D-1) 계좌별 필요 잔고 자동 알림 (신용카드 제외)</span>
+          </label>
           <label class="flex items-center gap-2 cursor-pointer">
             <input type="checkbox" id="cfgTgNotifySchedule" checked class="rounded text-sky-600 focus:ring-sky-500" />
             <span class="font-medium">일정 등록·수정·삭제 시 자동 알림</span>
@@ -882,15 +929,17 @@ alter publication supabase_realtime add table fixed_expenses;</pre>
       if (!deletedIds.includes(strId)) {
         deletedIds.push(strId);
         if (deletedIds.length > 300) deletedIds = deletedIds.slice(-300);
-        localStorage.setItem(DELETED_IDS_STORAGE_KEY, JSON.stringify(deletedIds));
+        try { localStorage.setItem(DELETED_IDS_STORAGE_KEY, JSON.stringify(deletedIds)); } catch (e) {}
       }
     }
 
     let telegramConfig = {
       token: '',
       chatId: '',
+      notifyAccountD1: true,
       notifySchedule: true,
       notifyExpense: false,
+      lastD1NotifiedKey: '',
       updatedAt: 0
     };
     try {
@@ -907,7 +956,10 @@ alter publication supabase_realtime add table fixed_expenses;</pre>
       quickTags = [...DEFAULT_TAGS];
     }
 
-    let rawExpenses = localStorage.getItem(EXPENSES_STORAGE_KEY) || localStorage.getItem('fixed_expenses_v3');
+    let rawExpenses = null;
+    try {
+      rawExpenses = localStorage.getItem(EXPENSES_STORAGE_KEY) || localStorage.getItem('fixed_expenses_v3');
+    } catch (e) {}
     let expenses = [];
     try {
       expenses = rawExpenses ? JSON.parse(rawExpenses) : [];
@@ -916,7 +968,10 @@ alter publication supabase_realtime add table fixed_expenses;</pre>
       expenses = [];
     }
 
-    let rawSchedules = localStorage.getItem(SCHEDULES_STORAGE_KEY);
+    let rawSchedules = null;
+    try {
+      rawSchedules = localStorage.getItem(SCHEDULES_STORAGE_KEY);
+    } catch (e) {}
     let schedules = [];
     try {
       schedules = rawSchedules ? JSON.parse(rawSchedules) : [];
@@ -927,6 +982,7 @@ alter publication supabase_realtime add table fixed_expenses;</pre>
     let activeMainTab = 'expense';
     let currentFilter = 'all';
     let currentPortfolioTab = 'account';
+    let accountTabOnlyBankTransfer = true; // 기본값: 신용카드 제외, 계좌이체만 합산 보기
     let currentDurationMode = 'indefinite';
     let isVariable = false;
 
@@ -952,6 +1008,27 @@ alter publication supabase_realtime add table fixed_expenses;</pre>
 
     let { today, currentYear, currentMonth, currentDay, lastDayOfMonth, todayYMD } = getTodayContext();
     let appLoadedDateYMD = todayYMD;
+
+    // 내일(D-1 기준 대상일) 계산 헬퍼 (월말->익월 1일 자동 대응)
+    function getTomorrowContext() {
+      const tmr = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1);
+      const tmrYear = tmr.getFullYear();
+      const tmrMonth = tmr.getMonth() + 1;
+      const tmrDay = tmr.getDate();
+      const tmrLastDay = new Date(tmrYear, tmrMonth, 0).getDate();
+      return {
+        tmr,
+        tmrYear,
+        tmrMonth,
+        tmrDay,
+        tmrLastDay,
+        tmrYMD: formatDateYMD(tmr)
+      };
+    }
+
+    function getEffectiveDayForMonth(day, lastDay) {
+      return Math.min(Math.max(Number(day) || 1, 1), lastDay);
+    }
 
     // 자정 경과 시 자동 새로고침 감지
     document.addEventListener('visibilitychange', () => {
@@ -1052,11 +1129,11 @@ alter publication supabase_realtime add table fixed_expenses;</pre>
       }
     }
 
-    function getDurationProgress(durationMonths, startYearMonth) {
+    function getDurationProgress(durationMonths, startYearMonth, targetYear = currentYear, targetMonth = currentMonth) {
       if (!durationMonths || durationMonths <= 0) return null;
       if (startYearMonth) {
         const [sYear, sMonth] = startYearMonth.split('-').map(Number);
-        const elapsedMonths = (currentYear - sYear) * 12 + (currentMonth - sMonth);
+        const elapsedMonths = (targetYear - sYear) * 12 + (targetMonth - sMonth);
         const isMatured = elapsedMonths >= durationMonths;
         const currentRound = elapsedMonths < 0 ? 0 : Math.min(durationMonths, elapsedMonths + 1);
         const remaining = Math.max(0, durationMonths - currentRound);
@@ -1066,9 +1143,214 @@ alter publication supabase_realtime add table fixed_expenses;</pre>
       return { currentRound: null, durationMonths, remaining: durationMonths, pct: null, isMatured: false };
     }
 
-    function checkIsMatured(item) {
-      const prog = getDurationProgress(item.durationMonths, item.startYearMonth);
+    function checkIsMatured(item, targetYear = currentYear, targetMonth = currentMonth) {
+      const prog = getDurationProgress(item.durationMonths, item.startYearMonth, targetYear, targetMonth);
       return prog ? prog.isMatured : false;
+    }
+
+    // ⭐ 신용카드('credit')를 제외하고 순수 계좌이체('account')로 나가는 항목인지 판별
+    function isBankAccountTransfer(item) {
+      return (item.paymentMethod || 'account') === 'account';
+    }
+
+    // ⭐ 특정 연/월/일에 빠져나가는 계좌이체 항목들을 계좌별로 합산
+    function getBankTransfersForDay(targetYear, targetMonth, targetDay, targetLastDay) {
+      const activeAccountItems = expenses.filter(item =>
+        !checkIsMatured(item, targetYear, targetMonth) &&
+        isBankAccountTransfer(item) &&
+        getEffectiveDayForMonth(item.day, targetLastDay) === targetDay
+      );
+
+      const accountMap = {};
+      let totalAmount = 0;
+
+      activeAccountItems.forEach(item => {
+        const accName = (item.paymentDetail || '').trim() || '계좌 미지정';
+        if (!accountMap[accName]) {
+          accountMap[accName] = {
+            accountName: accName,
+            totalAmount: 0,
+            owners: new Set(),
+            items: []
+          };
+        }
+        accountMap[accName].totalAmount += item.amount;
+        accountMap[accName].owners.add(item.owner || '남편');
+        accountMap[accName].items.push(item);
+        totalAmount += item.amount;
+      });
+
+      const accounts = Object.values(accountMap).sort((a, b) => b.totalAmount - a.totalAmount);
+      return {
+        accounts,
+        totalAmount,
+        itemCount: activeAccountItems.length
+      };
+    }
+
+    // ⭐ 오늘 이후(또는 다음 달) 가장 가까운 계좌이체 출금일 찾기
+    function getNextUpcomingBankTransferInfo() {
+      const activeAccountItems = expenses.filter(item => !checkIsMatured(item) && isBankAccountTransfer(item));
+      if (activeAccountItems.length === 0) return null;
+
+      // 이번 달 오늘 이후(내일 포함) 검색
+      const upcomingDaysThisMonth = [...new Set(
+        activeAccountItems
+          .map(i => getEffectiveDay(i.day))
+          .filter(d => d > currentDay)
+      )].sort((a, b) => a - b);
+
+      if (upcomingDaysThisMonth.length > 0) {
+        const nextDay = upcomingDaysThisMonth[0];
+        const summary = getBankTransfersForDay(currentYear, currentMonth, nextDay, lastDayOfMonth);
+        return {
+          year: currentYear,
+          month: currentMonth,
+          day: nextDay,
+          diffDays: nextDay - currentDay,
+          ...summary
+        };
+      }
+
+      // 이번 달 남은 이체가 없으면 다음 달 첫 이체일 검색
+      const nextMonthDate = new Date(currentYear, currentMonth, 1);
+      const nYear = nextMonthDate.getFullYear();
+      const nMonth = nextMonthDate.getMonth() + 1;
+      const nLastDay = new Date(nYear, nMonth, 0).getDate();
+
+      const activeNextMonth = expenses.filter(item => !checkIsMatured(item, nYear, nMonth) && isBankAccountTransfer(item));
+      if (activeNextMonth.length === 0) return null;
+
+      const daysNextMonth = [...new Set(
+        activeNextMonth.map(i => getEffectiveDayForMonth(i.day, nLastDay))
+      )].sort((a, b) => a - b);
+
+      if (daysNextMonth.length === 0) return null;
+      const firstDay = daysNextMonth[0];
+      const targetDateObj = new Date(nYear, nMonth - 1, firstDay);
+      const todayZero = new Date(currentYear, currentMonth - 1, currentDay);
+      const diffDays = Math.round((targetDateObj.getTime() - todayZero.getTime()) / (1000 * 60 * 60 * 24));
+      const summary = getBankTransfersForDay(nYear, nMonth, firstDay, nLastDay);
+
+      return {
+        year: nYear,
+        month: nMonth,
+        day: firstDay,
+        diffDays,
+        ...summary
+      };
+    }
+
+    // ⭐ 이체 전날(D-1) 텔레그램 메시지 포맷 생성 (신용카드 무시, 계좌이체만 계좌별 합산)
+    function buildD1TelegramMessage(month, day, accounts, totalAmount, isPreview = false) {
+      const headerBadge = isPreview
+        ? `🔔 <b>[부부 가계부] 다가오는 ${month}월 ${day}일 계좌이체 필요 잔고 사전 알림</b>`
+        : `🚨 <b>[부부 가계부] 내일(${month}월 ${day}일) 계좌이체 전날(D-1) 잔고 준비 알림</b>`;
+
+      let msg = `${headerBadge}\n`;
+      msg += `신용카드 결제는 제외하고 <b>순수 계좌이체</b>로 나가는 금액만 계좌별로 합산했습니다.\n`;
+      msg += isPreview
+        ? `이체 전날(${day > 1 ? `${month}월 ${day - 1}일` : '전날'})까지 아래 계좌에 잔고를 미리 준비해 주세요! 🙏\n\n`
+        : `<b>오늘(${currentMonth}월 ${currentDay}일) 중</b> 아래 계좌에 필요 잔고가 있는지 꼭 확인해 주세요! 🙏\n\n`;
+
+      accounts.forEach(acc => {
+        const ownerStr = Array.from(acc.owners).join('·');
+        msg += `🏦 <b>[${escapeHtml(acc.accountName)}]</b> (${escapeHtml(ownerStr)})\n`;
+        msg += `👉 <b>필요 잔고: 최소 ${acc.totalAmount.toLocaleString()}원</b>\n`;
+        acc.items.forEach(it => {
+          const typeLabel = it.type === 'savings' ? '저축' : '지출';
+          msg += `   • ${escapeHtml(it.name)} (${typeLabel}): ${it.amount.toLocaleString()}원\n`;
+        });
+        msg += `\n`;
+      });
+
+      msg += `💰 <b>${month}월 ${day}일 계좌이체 총 합산액: ${totalAmount.toLocaleString()}원</b>`;
+      return msg;
+    }
+
+    // ⭐ 이번 달 전체 계좌별·특정일별 필요 잔고 스케줄 텔레그램 메시지 생성
+    function buildAllAccountBalanceScheduleMessage() {
+      const activeAccountItems = expenses.filter(item => !checkIsMatured(item) && isBankAccountTransfer(item));
+      if (activeAccountItems.length === 0) return null;
+
+      // 계좌별로 그룹핑 후, 각 계좌 내에서 특정일(effDay)별로 합산
+      const accMap = {};
+      activeAccountItems.forEach(item => {
+        const accName = (item.paymentDetail || '').trim() || '계좌 미지정';
+        const effDay = getEffectiveDay(item.day);
+        if (!accMap[accName]) {
+          accMap[accName] = {
+            accountName: accName,
+            totalMonthly: 0,
+            remainingFromToday: 0,
+            dayGroups: {}
+          };
+        }
+        accMap[accName].totalMonthly += item.amount;
+        if (effDay >= currentDay) accMap[accName].remainingFromToday += item.amount;
+
+        if (!accMap[accName].dayGroups[effDay]) {
+          accMap[accName].dayGroups[effDay] = { day: effDay, sum: 0, items: [] };
+        }
+        accMap[accName].dayGroups[effDay].sum += item.amount;
+        accMap[accName].dayGroups[effDay].items.push(item);
+      });
+
+      let msg = `🏦 <b>[부부 가계부] ${currentMonth}월 계좌별 · 특정일 필요 잔고 안내</b>\n`;
+      msg += `(💳 신용카드 제외 · 순수 계좌이체 합산 기준)\n\n`;
+
+      const sortedAccounts = Object.values(accMap).sort((a, b) => b.remainingFromToday - a.remainingFromToday || b.totalMonthly - a.totalMonthly);
+
+      sortedAccounts.forEach(acc => {
+        msg += `━━━━━━━━━━━━━━\n`;
+        msg += `🏛️ <b>[${escapeHtml(acc.accountName)}]</b>\n`;
+        msg += `• 오늘 이후 남은 이체총액: <b>${acc.remainingFromToday.toLocaleString()}원</b> (월 전체 ${acc.totalMonthly.toLocaleString()}원)\n`;
+
+        const sortedDays = Object.values(acc.dayGroups).sort((a, b) => a.day - b.day);
+        let runningAcc = 0;
+        sortedDays.forEach(dg => {
+          const isPassed = dg.day < currentDay;
+          if (!isPassed) runningAcc += dg.sum;
+          const prevDayText = dg.day === 1 ? '전월 말일' : `${dg.day - 1}일`;
+          const itemNames = dg.items.map(i => `${escapeHtml(i.name)}(${i.amount.toLocaleString()}원)`).join(' + ');
+          if (isPassed) {
+            msg += `  ✓ [경과] ${dg.day}일: ${dg.sum.toLocaleString()}원 (${itemNames})\n`;
+          } else {
+            const dTag = dg.day === currentDay ? '오늘 이체' : dg.day === currentDay + 1 ? '🚨내일 이체(오늘 준비!)' : `${prevDayText}까지 준비`;
+            msg += `  📌 <b>${dg.day}일 이체 [${dTag}] → 최소 ${dg.sum.toLocaleString()}원 필요</b>\n`;
+            msg += `     └ ${itemNames}${ sortedDays.filter(x => x.day >= currentDay).length > 1 ? ` (누적 필요잔고 ${runningAcc.toLocaleString()}원)` : '' }\n`;
+          }
+        });
+        msg += `\n`;
+      });
+
+      return msg.trim();
+    }
+
+    // ⭐ 앱 실행 / 데이터 변경 시 내일(D-1) 계좌이체 예정 건이 있으면 1일 1회 자동 텔레그램 발송
+    async function checkAndSendAutoD1AccountAlert() {
+      if (!telegramConfig.token || !telegramConfig.chatId) return;
+      if (telegramConfig.notifyAccountD1 === false) return;
+
+      const { tmrYear, tmrMonth, tmrDay, tmrLastDay, tmrYMD } = getTomorrowContext();
+      const { accounts, totalAmount, itemCount } = getBankTransfersForDay(tmrYear, tmrMonth, tmrDay, tmrLastDay);
+
+      if (itemCount === 0 || totalAmount <= 0) return;
+
+      // 오늘 날짜 + 내일 이체 총액 + 건수 조합 키로 중복 발송 방지 (내일 이체 금액이 수정되면 재알림)
+      const notifyKey = `${todayYMD}__${tmrYMD}__${totalAmount}__${itemCount}`;
+      if (telegramConfig.lastD1NotifiedKey === notifyKey) return;
+
+      const msg = buildD1TelegramMessage(tmrMonth, tmrDay, accounts, totalAmount, false);
+      const res = await sendTelegramMessage(msg);
+      if (res.success) {
+        telegramConfig.lastD1NotifiedKey = notifyKey;
+        telegramConfig.updatedAt = Date.now();
+        try { localStorage.setItem(TELEGRAM_CONFIG_KEY, JSON.stringify(telegramConfig)); } catch (e) {}
+        await syncMetaToCloud();
+        renderExpenseSection();
+        showToast(`🔔 내일(${tmrMonth}/${tmrDay}) 계좌이체(D-1) 잔고 준비 알림이 텔레그램으로 자동 발송되었습니다!`);
+      }
     }
 
     function extractOwnerAndMemo(rawOwner, rawMemo) {
@@ -1222,14 +1504,14 @@ alter publication supabase_realtime add table fixed_expenses;</pre>
         let changed = false;
         if (Array.isArray(parsed.quickTags) && JSON.stringify(parsed.quickTags) !== JSON.stringify(quickTags)) {
           quickTags = parsed.quickTags;
-          localStorage.setItem(QUICK_TAGS_STORAGE_KEY, JSON.stringify(quickTags));
+          try { localStorage.setItem(QUICK_TAGS_STORAGE_KEY, JSON.stringify(quickTags)); } catch (e) {}
           renderQuickTags();
           changed = true;
         }
         if (parsed.telegramConfig && parsed.telegramConfig.token) {
           if (JSON.stringify(parsed.telegramConfig) !== JSON.stringify(telegramConfig)) {
             telegramConfig = { ...telegramConfig, ...parsed.telegramConfig };
-            localStorage.setItem(TELEGRAM_CONFIG_KEY, JSON.stringify(telegramConfig));
+            try { localStorage.setItem(TELEGRAM_CONFIG_KEY, JSON.stringify(telegramConfig)); } catch (e) {}
             updateNotifyUI();
             changed = true;
           }
@@ -1414,7 +1696,7 @@ alter publication supabase_realtime add table fixed_expenses;</pre>
         const mergedExpenses = Array.from(cloudExpMap.values());
         if (serializeById(expenses) !== serializeById(mergedExpenses)) {
           expenses = mergedExpenses;
-          localStorage.setItem(EXPENSES_STORAGE_KEY, JSON.stringify(expenses));
+          try { localStorage.setItem(EXPENSES_STORAGE_KEY, JSON.stringify(expenses)); } catch (e) {}
           hasDiff = true;
         }
 
@@ -1460,7 +1742,7 @@ alter publication supabase_realtime add table fixed_expenses;</pre>
         const mergedSchedules = Array.from(cloudSchedMap.values());
         if (serializeById(schedules) !== serializeById(mergedSchedules)) {
           schedules = mergedSchedules;
-          localStorage.setItem(SCHEDULES_STORAGE_KEY, JSON.stringify(schedules));
+          try { localStorage.setItem(SCHEDULES_STORAGE_KEY, JSON.stringify(schedules)); } catch (e) {}
           hasDiff = true;
         }
 
@@ -1480,6 +1762,8 @@ alter publication supabase_realtime add table fixed_expenses;</pre>
             showToast('클라우드 변경 사항이 자동 반영되었습니다! 🔄');
           }
         }
+
+        await checkAndSendAutoD1AccountAlert();
       } catch (e) {}
     }
 
@@ -1505,6 +1789,7 @@ alter publication supabase_realtime add table fixed_expenses;</pre>
         stopSmartPolling();
         updateSyncUI('disconnected');
         renderAll();
+        await checkAndSendAutoD1AccountAlert();
         return;
       }
 
@@ -1560,7 +1845,7 @@ alter publication supabase_realtime add table fixed_expenses;</pre>
         });
 
         expenses = Array.from(cloudExpMap.values());
-        localStorage.setItem(EXPENSES_STORAGE_KEY, JSON.stringify(expenses));
+        try { localStorage.setItem(EXPENSES_STORAGE_KEY, JSON.stringify(expenses)); } catch (e) {}
 
         if (localOnlyExpenses.length > 0) {
           lockMutation();
@@ -1595,7 +1880,7 @@ alter publication supabase_realtime add table fixed_expenses;</pre>
         });
 
         schedules = Array.from(cloudSchedMap.values());
-        localStorage.setItem(SCHEDULES_STORAGE_KEY, JSON.stringify(schedules));
+        try { localStorage.setItem(SCHEDULES_STORAGE_KEY, JSON.stringify(schedules)); } catch (e) {}
 
         if (localOnlySchedules.length > 0) {
           lockMutation();
@@ -1613,6 +1898,7 @@ alter publication supabase_realtime add table fixed_expenses;</pre>
         renderAll();
         updateSyncUI('connected');
         startSmartPolling();
+        await checkAndSendAutoD1AccountAlert();
 
         try {
           if (typeof window.WebSocket !== 'undefined') {
@@ -1631,6 +1917,7 @@ alter publication supabase_realtime add table fixed_expenses;</pre>
         stopSmartPolling();
         updateSyncUI('disconnected', `연결 오류: ${err.message}`);
         renderAll();
+        await checkAndSendAutoD1AccountAlert();
       }
     }
 
@@ -1645,7 +1932,7 @@ alter publication supabase_realtime add table fixed_expenses;</pre>
       if (idx !== -1) expenses[idx] = item;
       else expenses.push(item);
 
-      localStorage.setItem(EXPENSES_STORAGE_KEY, JSON.stringify(expenses));
+      try { localStorage.setItem(EXPENSES_STORAGE_KEY, JSON.stringify(expenses)); } catch (e) {}
       renderExpenseSection();
 
       let cloudOk = false;
@@ -1662,10 +1949,12 @@ alter publication supabase_realtime add table fixed_expenses;</pre>
       }
 
       if (telegramConfig.notifyExpense && isNew) {
-        // ⭐ 수정: item.name과 item.owner에 escapeHtml 적용하여 HTML 깨짐 방지
         const text = `💸 <b>[부부 가계부] 새 고정지출 등록</b>\n• 항목: ${escapeHtml(item.name)}\n• 금액: ${item.amount.toLocaleString()}원\n• 출금일: 매월 ${item.day}일\n• 명의: ${escapeHtml(item.owner || '남편')}`;
         sendTelegramMessage(text);
       }
+
+      // 내일 이체되는 계좌이체 항목이 새로 추가/수정되었을 경우 자동 D-1 알림 확인
+      await checkAndSendAutoD1AccountAlert();
 
       return { cloudOk, errMsg };
     }
@@ -1673,7 +1962,7 @@ alter publication supabase_realtime add table fixed_expenses;</pre>
     async function syncDeleteItem(id) {
       markIdDeleted(id);
       expenses = expenses.filter(i => String(i.id) !== String(id));
-      localStorage.setItem(EXPENSES_STORAGE_KEY, JSON.stringify(expenses));
+      try { localStorage.setItem(EXPENSES_STORAGE_KEY, JSON.stringify(expenses)); } catch (e) {}
       renderExpenseSection();
 
       if (supabaseClient) {
@@ -1692,7 +1981,7 @@ alter publication supabase_realtime add table fixed_expenses;</pre>
       if (idx !== -1) schedules[idx] = schedObj;
       else schedules.push(schedObj);
 
-      localStorage.setItem(SCHEDULES_STORAGE_KEY, JSON.stringify(schedules));
+      try { localStorage.setItem(SCHEDULES_STORAGE_KEY, JSON.stringify(schedules)); } catch (e) {}
       renderScheduleSection();
 
       let cloudOk = false;
@@ -1727,7 +2016,7 @@ alter publication supabase_realtime add table fixed_expenses;</pre>
       markIdDeleted(cleanId);
       const target = schedules.find(s => String(s.id) === cleanId);
       schedules = schedules.filter(s => String(s.id) !== cleanId);
-      localStorage.setItem(SCHEDULES_STORAGE_KEY, JSON.stringify(schedules));
+      try { localStorage.setItem(SCHEDULES_STORAGE_KEY, JSON.stringify(schedules)); } catch (e) {}
       renderScheduleSection();
 
       if (supabaseClient) {
@@ -1802,9 +2091,13 @@ alter publication supabase_realtime add table fixed_expenses;</pre>
         return `<span class="text-[10px] bg-rose-100 text-rose-700 px-1.5 py-0.5 rounded border border-rose-200 font-bold">만기종료 (${durationMonths}개월)</span>`;
       }
       if (info.currentRound !== null) {
-        return `<span class="text-[10px] bg-indigo-50 text-indigo-700 px-1.5 py-0.5 rounded border border-indigo-200 font-medium">${info.currentRound}/${durationMonths}회 (잔여 ${info.remaining}개월)</span>`;
+        return `<span class="text-[10px] bg-indigo-50 text-indigo-700 px-1.5 py-0.5 rounded border border-indigo-200 font-medium">${info.currentRound}/${durationMonths}회 (잔여 ${progRemaining(info)}개월)</span>`;
       }
       return `<span class="text-[10px] bg-indigo-50 text-indigo-700 px-1.5 py-0.5 rounded border border-indigo-200 font-medium">${durationMonths}개월 약정</span>`;
+    }
+
+    function progRemaining(info) {
+      return info.remaining;
     }
 
     function saveToFrequentHistory(field, val) {
@@ -1911,6 +2204,208 @@ alter publication supabase_realtime add table fixed_expenses;</pre>
       }
     }
 
+    // ⭐ 신규: 지출관리 탭 상단 『계좌별 · 특정일 필요 잔고 & 이체 전날(D-1) 알림 센터』 렌더링
+    function renderAccountD1AlertSection() {
+      const tomorrowBox = $('tomorrowTransferAlertBox');
+      const dateBalanceList = $('accountDateBalanceList');
+      const countBadge = $('accountOnlyCountBadge');
+      const statusText = $('d1AutoStatusText');
+      const sendBtnText = $('sendD1AlertNowBtnText');
+
+      if (!tomorrowBox || !dateBalanceList) return;
+
+      const activeAccountItems = expenses.filter(i => !checkIsMatured(i) && isBankAccountTransfer(i));
+      const excludedCreditCount = expenses.filter(i => !checkIsMatured(i) && !isBankAccountTransfer(i)).length;
+
+      if (countBadge) {
+        countBadge.textContent = `계좌이체 ${activeAccountItems.length}건 (신용카드 등 ${excludedCreditCount}건 제외됨)`;
+      }
+
+      const isTgConfigured = Boolean(telegramConfig.token && telegramConfig.chatId);
+      const isD1AutoOn = telegramConfig.notifyAccountD1 !== false;
+      if (statusText) {
+        if (!isTgConfigured) {
+          statusText.innerHTML = `<span class="text-amber-700 font-semibold">⚠️ 상단 [알림] 버튼에서 텔레그램을 설정하면 이체 전날(D-1) 자동 알림이 발송됩니다.</span>`;
+        } else if (isD1AutoOn) {
+          statusText.innerHTML = `<span class="text-emerald-700 font-semibold">🟢 이체 전날(D-1) 텔레그램 자동 알림 켜짐</span> · 신용카드는 무시하고 계좌이체만 계좌별로 합산해 알립니다.`;
+        } else {
+          statusText.innerHTML = `<span class="text-slate-500">⚪ 이체 전날(D-1) 자동 알림 꺼짐 ([알림] 설정에서 켤 수 있습니다)</span>`;
+        }
+      }
+
+      // 1. 내일(D-1) 당장 빠져나가는 계좌이체 확인
+      const { tmrYear, tmrMonth, tmrDay, tmrLastDay, tmrYMD } = getTomorrowContext();
+      const tmrSummary = getBankTransfersForDay(tmrYear, tmrMonth, tmrDay, tmrLastDay);
+
+      if (tmrSummary.itemCount > 0) {
+        if (sendBtnText) sendBtnText.textContent = `🚨 내일(${tmrMonth}/${tmrDay}) 이체 알림 쏘기`;
+        const notifyKey = `${todayYMD}__${tmrYMD}__${tmrSummary.totalAmount}__${tmrSummary.itemCount}`;
+        const alreadySent = telegramConfig.lastD1NotifiedKey === notifyKey;
+
+        tomorrowBox.className = 'p-3.5 rounded-xl border border-rose-300 bg-rose-50/70 space-y-2 shadow-xs';
+        const accCardsHtml = tmrSummary.accounts.map(acc => {
+          const ownerStr = Array.from(acc.owners).join('·');
+          const itemsStr = acc.items.map(it => `${escapeHtml(it.name)}(${it.amount.toLocaleString()}원)`).join(' + ');
+          return `
+            <div class="p-2.5 rounded-lg bg-white border border-rose-200 flex items-center justify-between gap-2">
+              <div class="min-w-0">
+                <div class="flex items-center gap-1.5">
+                  <span class="text-[10px] font-bold bg-indigo-50 text-indigo-700 px-1.5 py-0.5 rounded border border-indigo-200">${escapeHtml(ownerStr)}</span>
+                  <span class="text-xs font-bold text-slate-900">🏦 ${escapeHtml(acc.accountName)}</span>
+                </div>
+                <p class="text-[11px] text-slate-500 mt-0.5 truncate">${itemsStr}</p>
+              </div>
+              <div class="text-right shrink-0">
+                <span class="text-[10px] text-rose-600 font-semibold block">오늘까지 필요 잔고</span>
+                <span class="text-sm font-extrabold text-rose-600">${acc.totalAmount.toLocaleString()}원</span>
+              </div>
+            </div>
+          `;
+        }).join('');
+
+        tomorrowBox.innerHTML = `
+          <div class="flex items-center justify-between gap-2 flex-wrap">
+            <div class="flex items-center gap-1.5">
+              <span class="text-[10px] bg-rose-600 text-white font-bold px-2 py-0.5 rounded-full animate-pulse">D-1 이체 전날</span>
+              <span class="font-bold text-rose-950 text-xs">내일(${tmrMonth}월 ${tmrDay}일) 계좌이체 ${tmrSummary.itemCount}건 · 총 ${tmrSummary.totalAmount.toLocaleString()}원 출금 예정!</span>
+            </div>
+            <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full ${alreadySent ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}">
+              ${alreadySent ? '✓ 오늘 텔레그램 자동알림 발송됨' : '오늘 중 잔고 준비 필수'}
+            </span>
+          </div>
+          <div class="space-y-1.5">${accCardsHtml}</div>
+        `;
+      } else {
+        // 내일 당장 이체가 없을 때: 가장 가까운 다음 계좌이체일 안내
+        const nextInfo = getNextUpcomingBankTransferInfo();
+        if (nextInfo && nextInfo.itemCount > 0) {
+          const prevDayLabel = nextInfo.day === 1 ? '전월 말일' : `${nextInfo.month}월 ${nextInfo.day - 1}일`;
+          if (sendBtnText) sendBtnText.textContent = `📲 다음 이체(${nextInfo.month}/${nextInfo.day}) 잔고 알림`;
+          tomorrowBox.className = 'p-3 rounded-xl border border-indigo-200/80 bg-indigo-50/40 space-y-2';
+
+          const nextAccHtml = nextInfo.accounts.map(acc => {
+            const ownerStr = Array.from(acc.owners).join('·');
+            const itemsStr = acc.items.map(it => `${escapeHtml(it.name)}(${it.amount.toLocaleString()}원)`).join(' + ');
+            return `
+              <div class="py-1.5 px-2.5 rounded-lg bg-white border border-indigo-100 flex items-center justify-between gap-2">
+                <div class="min-w-0">
+                  <span class="text-xs font-bold text-slate-800">🏦 ${escapeHtml(acc.accountName)} <span class="text-[10px] font-normal text-slate-500">(${escapeHtml(ownerStr)})</span></span>
+                  <span class="text-[10px] text-slate-400 block truncate">${itemsStr}</span>
+                </div>
+                <div class="text-right shrink-0">
+                  <span class="text-[10px] text-indigo-600 font-semibold block">${prevDayLabel}까지 준비</span>
+                  <span class="text-xs font-bold text-indigo-700">최소 ${acc.totalAmount.toLocaleString()}원</span>
+                </div>
+              </div>
+            `;
+          }).join('');
+
+          tomorrowBox.innerHTML = `
+            <div class="flex items-center justify-between gap-2 flex-wrap">
+              <span class="text-xs font-bold text-indigo-950">
+                ✓ 내일(${tmrMonth}월 ${tmrDay}일)은 예정된 계좌이체가 없습니다 · 다음 이체일: <b class="text-indigo-700">${nextInfo.month}월 ${nextInfo.day}일 (D-${nextInfo.diffDays})</b>
+              </span>
+              <span class="text-[10px] text-indigo-700 bg-indigo-100/80 px-2 py-0.5 rounded-full font-semibold">
+                이체 전날(${prevDayLabel}) 자동 알림 예정
+              </span>
+            </div>
+            <div class="space-y-1">${nextAccHtml}</div>
+          `;
+        } else {
+          if (sendBtnText) sendBtnText.textContent = '이체 전날(D-1) 알림 쏘기';
+          tomorrowBox.className = 'p-3 rounded-xl border border-slate-200 bg-slate-50 text-slate-500 text-center text-xs';
+          tomorrowBox.innerHTML = `등록된 계좌이체(🏦) 고정지출 항목이 없습니다. 항목 추가 시 결제수단을 [🏦 계좌이체]로 선택하면 계좌별 필요 잔고를 자동 합산합니다.`;
+        }
+      }
+
+      // 2. 특정일별 · 계좌별 준비해야 할 최소 잔고 리스트 (오늘 이후 ~ 말일, 신용카드 제외)
+      if (activeAccountItems.length === 0) {
+        dateBalanceList.innerHTML = `<div class="text-center py-4 text-[11px] text-slate-400">표시할 계좌이체 항목이 없습니다.</div>`;
+        return;
+      }
+
+      // 계좌별 누적 잔고 계산용 맵
+      const accRunningTotal = {};
+      // (일자 + 계좌명) 단위로 그룹핑하여 정렬
+      const upcomingAccountItems = activeAccountItems.filter(i => getEffectiveDay(i.day) >= currentDay);
+      const passedAccountItems = activeAccountItems.filter(i => getEffectiveDay(i.day) < currentDay);
+
+      const buildGroupRows = (itemsList, isPassedGroup) => {
+        const dayAccMap = {};
+        itemsList.forEach(item => {
+          const effDay = getEffectiveDay(item.day);
+          const accName = (item.paymentDetail || '').trim() || '계좌 미지정';
+          const key = `${String(effDay).padStart(2, '0')}__${accName}`;
+          if (!dayAccMap[key]) {
+            dayAccMap[key] = {
+              effDay,
+              accName,
+              sumAmount: 0,
+              owners: new Set(),
+              items: []
+            };
+          }
+          dayAccMap[key].sumAmount += item.amount;
+          dayAccMap[key].owners.add(item.owner || '남편');
+          dayAccMap[key].items.push(item);
+        });
+
+        const sortedGroups = Object.values(dayAccMap).sort((a, b) => a.effDay - b.effDay || b.sumAmount - a.sumAmount);
+
+        return sortedGroups.map(g => {
+          if (!isPassedGroup) {
+            accRunningTotal[g.accName] = (accRunningTotal[g.accName] || 0) + g.sumAmount;
+          }
+          const cumulativeForAcc = accRunningTotal[g.accName] || g.sumAmount;
+          const prevDayLabel = g.effDay === 1 ? '전월 말일' : `${currentMonth}월 ${g.effDay - 1}일`;
+          const diff = g.effDay - currentDay;
+          const dBadge = diff === 0
+            ? `<span class="text-[9px] bg-rose-500 text-white font-bold px-1.5 py-0.5 rounded-full">오늘 이체일</span>`
+            : diff === 1
+            ? `<span class="text-[9px] bg-amber-500 text-white font-bold px-1.5 py-0.5 rounded-full animate-pulse">내일 이체 (오늘 준비!)</span>`
+            : diff > 1
+            ? `<span class="text-[9px] bg-sky-100 text-sky-800 font-bold px-1.5 py-0.5 rounded-full">${prevDayLabel}까지 준비 (D-${diff})</span>`
+            : `<span class="text-[9px] bg-slate-200 text-slate-500 font-medium px-1.5 py-0.5 rounded-full">이번달 이체완료</span>`;
+
+          const itemBreakdown = g.items.map(it => `${escapeHtml(it.name)} ${it.amount.toLocaleString()}원`).join(' + ');
+          const ownerStr = Array.from(g.owners).join('·');
+
+          return `
+            <div class="p-2.5 rounded-xl border ${isPassedGroup ? 'border-slate-100 bg-slate-50/70 opacity-65' : diff <= 1 ? 'border-rose-200 bg-rose-50/30' : 'border-slate-200 bg-white'} flex items-center justify-between gap-2">
+              <div class="min-w-0 flex-1">
+                <div class="flex items-center gap-1.5 flex-wrap">
+                  <span class="text-[11px] font-extrabold ${isPassedGroup ? 'text-slate-500' : 'text-indigo-700'} bg-indigo-50/80 px-1.5 py-0.5 rounded">${currentMonth}월 ${g.effDay}일</span>
+                  <span class="text-xs font-bold text-slate-900">🏦 ${escapeHtml(g.accName)}</span>
+                  <span class="text-[10px] text-slate-500">(${escapeHtml(ownerStr)})</span>
+                  ${dBadge}
+                </div>
+                <p class="text-[11px] text-slate-500 mt-1 truncate">
+                  ${g.items.length > 1 ? `<b class="text-slate-700">${g.items.length}건 합산:</b> ` : ''}${itemBreakdown}
+                </p>
+              </div>
+              <div class="text-right shrink-0 flex items-center gap-1.5">
+                <div>
+                  <span class="text-[10px] text-slate-400 block">${isPassedGroup ? `${g.effDay}일 이체액` : `${prevDayLabel}까지 최소 잔고`}</span>
+                  <span class="text-xs sm:text-sm font-extrabold ${isPassedGroup ? 'text-slate-500' : 'text-rose-600'}">${g.sumAmount.toLocaleString()}원</span>
+                  ${!isPassedGroup && cumulativeForAcc > g.sumAmount ? `<span class="text-[10px] text-indigo-600 font-semibold block">계좌 누적 ${cumulativeForAcc.toLocaleString()}원</span>` : ''}
+                </div>
+                <button type="button" data-day="${g.effDay}" data-acc="${escapeHtml(g.accName)}" class="send-single-acc-day-tg-btn p-1.5 rounded-lg bg-sky-50 hover:bg-sky-100 text-sky-700 border border-sky-200 transition shrink-0" title="이 계좌·일자의 잔고 준비 알림을 텔레그램으로 즉시 발송">
+                  <i data-lucide="send" class="w-3.5 h-3.5"></i>
+                </button>
+              </div>
+            </div>
+          `;
+        }).join('');
+      };
+
+      const upcomingHtml = buildGroupRows(upcomingAccountItems, false);
+      const passedHtml = buildGroupRows(passedAccountItems, true);
+
+      dateBalanceList.innerHTML =
+        (upcomingHtml || `<div class="text-center py-3 text-[11px] text-emerald-700 font-semibold bg-emerald-50/60 rounded-lg">🎉 이번 달 남은 계좌이체 출금 일정이 모두 완료되었습니다!</div>`) +
+        (passedHtml ? `<details class="pt-1"><summary class="text-[10px] text-slate-400 cursor-pointer select-none py-1">이번 달 이미 지나간 계좌이체 내역 보기 (${passedAccountItems.length}건)</summary><div class="space-y-1.5 mt-1.5">${passedHtml}</div></details>` : '');
+    }
+
     function renderPortfolioSection(expMonthly, savMonthly, totalMonthly) {
       const expRate = totalMonthly > 0 ? Math.round((expMonthly / totalMonthly) * 100) : 0;
       const savRate = totalMonthly > 0 ? (100 - expRate) : 0;
@@ -1929,14 +2424,35 @@ alter publication supabase_realtime add table fixed_expenses;</pre>
       }
 
       if (currentPortfolioTab === 'account') {
-        const methodLabels = { account: '🏦 계좌', credit: '💳 신용', check: '💳 체크', direct: '💸 송금' };
+        const methodLabels = { account: '🏦 계좌이체', credit: '💳 신용카드', check: '💳 체크카드', direct: '💸 직접송금' };
+        // 기본값: 신용카드 무시하고 계좌이체만 표시 (토글 가능)
+        const targetItems = accountTabOnlyBankTransfer
+          ? activeExpenses.filter(i => isBankAccountTransfer(i))
+          : activeExpenses;
+
+        const filterToggleHtml = `
+          <div class="flex items-center justify-between gap-2 pb-1.5 border-b border-slate-100">
+            <span class="text-[11px] text-slate-500 font-medium">
+              ${accountTabOnlyBankTransfer ? '🏦 <b>계좌이체 전용</b> (신용카드 제외 · 특정일 합산 잔고)' : '💳 모든 결제수단 표시 중'}
+            </span>
+            <button type="button" id="toggleAccountTabFilterBtn" class="text-[10px] px-2 py-1 rounded-lg border font-bold transition ${accountTabOnlyBankTransfer ? 'bg-indigo-50 border-indigo-200 text-indigo-700 hover:bg-indigo-100' : 'bg-slate-100 border-slate-200 text-slate-700 hover:bg-slate-200'}">
+              ${accountTabOnlyBankTransfer ? '💳 신용카드도 함께 보기' : '🏦 계좌이체만 보기 (신용카드 제외)'}
+            </button>
+          </div>
+        `;
+
+        if (targetItems.length === 0) {
+          container.innerHTML = filterToggleHtml + `<div class="text-center py-6 text-slate-400 text-xs">조건에 해당하는 계좌이체 항목이 없습니다.</div>`;
+          return;
+        }
+
         const groups = {};
-        activeExpenses.forEach(item => {
+        targetItems.forEach(item => {
           const accountName = item.paymentDetail ? item.paymentDetail : '상세 미지정';
           const methodPrefix = methodLabels[item.paymentMethod] || '기타';
           const key = `${accountName}__${item.paymentMethod}`;
           if (!groups[key]) {
-            groups[key] = { accountName, methodPrefix, totalMonthly: 0, remainingFromToday: 0, passedAmount: 0, items: [] };
+            groups[key] = { accountName, paymentMethod: item.paymentMethod, methodPrefix, totalMonthly: 0, remainingFromToday: 0, passedAmount: 0, items: [] };
           }
           groups[key].totalMonthly += item.amount;
           const effDay = getEffectiveDay(item.day);
@@ -1952,25 +2468,47 @@ alter publication supabase_realtime add table fixed_expenses;</pre>
           return groups[b].totalMonthly - groups[a].totalMonthly;
         });
 
-        container.innerHTML = sortedKeys.map(k => {
+        container.innerHTML = filterToggleHtml + sortedKeys.map(k => {
           const g = groups[k];
-          const sortedItems = [...g.items].sort((a, b) => getEffectiveDay(a.day) - getEffectiveDay(b.day));
-          const upcomingItems = sortedItems.filter(i => getEffectiveDay(i.day) >= currentDay);
+          const upcomingItems = g.items.filter(i => getEffectiveDay(i.day) >= currentDay);
+
+          // 특정일(effDay)별로 그룹화하여 해당 일자에 얼마의 잔고가 필요한지 합산 표시
+          const dayMap = {};
+          upcomingItems.forEach(item => {
+            const effDay = getEffectiveDay(item.day);
+            if (!dayMap[effDay]) dayMap[effDay] = { effDay, daySum: 0, list: [] };
+            dayMap[effDay].daySum += item.amount;
+            dayMap[effDay].list.push(item);
+          });
+
+          const sortedDays = Object.values(dayMap).sort((a, b) => a.effDay - b.effDay);
           let cumulative = 0;
 
-          const upcomingHtml = upcomingItems.map(item => {
-            cumulative += item.amount;
-            const effDay = getEffectiveDay(item.day);
-            const dDay = effDay === currentDay ? '오늘' : `D-${effDay - currentDay}`;
+          const upcomingHtml = sortedDays.map(dg => {
+            cumulative += dg.daySum;
+            const dDay = dg.effDay === currentDay ? '오늘 이체' : dg.effDay === currentDay + 1 ? '내일 이체(D-1)' : `D-${dg.effDay - currentDay}`;
+            const prevDayText = dg.effDay === 1 ? '전월 말일' : `${dg.effDay - 1}일`;
+            const itemNamesHtml = dg.list.map(it => `${escapeHtml(it.name)}(${it.amount.toLocaleString()}원)`).join(' + ');
+
             return `
-              <div class="flex items-center justify-between py-1.5 px-2.5 rounded-lg bg-white border border-indigo-100/90 shadow-sm">
-                <div class="flex items-center gap-1.5 min-w-0">
-                  <span class="text-[10px] font-bold text-indigo-700 bg-indigo-50 px-1.5 py-0.5 rounded shrink-0">${effDay}일 (${dDay})</span>
-                  <span class="text-xs font-semibold text-slate-800 truncate">${escapeHtml(item.name)}</span>
+              <div class="flex items-center justify-between py-2 px-2.5 rounded-lg bg-white border border-indigo-100/90 shadow-sm gap-2">
+                <div class="min-w-0 flex-1">
+                  <div class="flex items-center gap-1.5 flex-wrap">
+                    <span class="text-[10px] font-bold text-indigo-700 bg-indigo-50 px-1.5 py-0.5 rounded shrink-0">${dg.effDay}일 (${dDay})</span>
+                    <span class="text-[10px] font-bold text-rose-600 bg-rose-50 px-1.5 py-0.5 rounded shrink-0">전날(${prevDayText})까지 최소 ${dg.daySum.toLocaleString()}원 필요</span>
+                  </div>
+                  <span class="text-xs font-semibold text-slate-800 block truncate mt-1">${itemNamesHtml}</span>
                 </div>
-                <div class="text-right shrink-0 ml-2">
-                  <span class="text-xs font-bold text-slate-900">${item.amount.toLocaleString()}원</span>
-                  ${upcomingItems.length > 1 ? `<span class="text-[10px] text-slate-400 block">누적 ${cumulative.toLocaleString()}원</span>` : ''}
+                <div class="text-right shrink-0 ml-1 flex items-center gap-1.5">
+                  <div>
+                    <span class="text-xs font-extrabold text-slate-900">${dg.daySum.toLocaleString()}원</span>
+                    ${sortedDays.length > 1 ? `<span class="text-[10px] text-indigo-600 font-semibold block"> 이날까지 누적 ${cumulative.toLocaleString()}원</span>` : ''}
+                  </div>
+                  ${g.paymentMethod === 'account' ? `
+                    <button type="button" data-day="${dg.effDay}" data-acc="${escapeHtml(g.accountName)}" class="send-single-acc-day-tg-btn p-1.5 rounded-lg bg-sky-50 hover:bg-sky-100 text-sky-700 border border-sky-200 transition" title="이 날짜·계좌 필요 잔고 알림을 텔레그램으로 전송">
+                      <i data-lucide="send" class="w-3 h-3"></i>
+                    </button>
+                  ` : ''}
                 </div>
               </div>
             `;
@@ -1987,7 +2525,7 @@ alter publication supabase_realtime add table fixed_expenses;</pre>
                   <div class="text-[11px] text-slate-500 mt-0.5">월 전체 고정출금: <b class="text-slate-700">${g.totalMonthly.toLocaleString()}원</b> (${g.items.length}건)</div>
                 </div>
                 <div class="text-right shrink-0 bg-white px-2.5 py-1 rounded-lg border ${g.remainingFromToday > 0 ? 'border-rose-200' : 'border-slate-200'}">
-                  <span class="text-[10px] text-slate-500 block">오늘 이후 필요 잔액</span>
+                  <span class="text-[10px] text-slate-500 block">오늘 이후 총 필요 잔고</span>
                   <span class="text-xs font-bold ${g.remainingFromToday > 0 ? 'text-rose-600' : 'text-slate-400'}">
                     ${g.remainingFromToday > 0 ? `${g.remainingFromToday.toLocaleString()}원` : '출금 완료'}
                   </span>
@@ -2163,6 +2701,7 @@ alter publication supabase_realtime add table fixed_expenses;</pre>
         ? `👉 다음: ${getEffectiveDay(nextItem.day)}일 [${nextItem.paymentDetail || '미지정'}] ${nextItem.amount.toLocaleString()}원`
         : `이번 달 남은 출금 일정 없음 ✓`;
 
+      renderAccountD1AlertSection();
       renderPortfolioSection(expMonthly, savMonthly, totalMonthly);
 
       const searchKeyword = $('searchInput').value.trim().toLowerCase();
@@ -2587,6 +3126,118 @@ alter publication supabase_realtime add table fixed_expenses;</pre>
       updateNotifyUI();
     }
 
+    // ⭐ 신규: 지출관리 탭의 [이체 전날(D-1) 알림 쏘기] 버튼 핸들러
+    $('sendD1AlertNowBtn').addEventListener('click', async () => {
+      if (!telegramConfig.token || !telegramConfig.chatId) {
+        showToast('먼저 상단 [알림] 버튼을 눌러 텔레그램 설정을 완료해 주세요.');
+        openNotifyModal();
+        return;
+      }
+
+      const { tmrYear, tmrMonth, tmrDay, tmrLastDay } = getTomorrowContext();
+      const tmrSummary = getBankTransfersForDay(tmrYear, tmrMonth, tmrDay, tmrLastDay);
+
+      if (tmrSummary.itemCount > 0) {
+        showToast(`내일(${tmrMonth}/${tmrDay}) 계좌이체 필요 잔고 알림을 전송 중입니다...`);
+        const msg = buildD1TelegramMessage(tmrMonth, tmrDay, tmrSummary.accounts, tmrSummary.totalAmount, false);
+        const res = await sendTelegramMessage(msg);
+        if (res.success) {
+          showToast(`내일(${tmrMonth}/${tmrDay}) 계좌이체(D-1) 잔고 알림이 단톡방으로 전송되었습니다! 🚨`);
+        } else {
+          showToast(`전송 실패: ${res.message}`);
+        }
+        return;
+      }
+
+      const nextInfo = getNextUpcomingBankTransferInfo();
+      if (nextInfo && nextInfo.itemCount > 0) {
+        showToast(`다음 이체일(${nextInfo.month}/${nextInfo.day}) 필요 잔고 알림을 전송 중입니다...`);
+        const msg = buildD1TelegramMessage(nextInfo.month, nextInfo.day, nextInfo.accounts, nextInfo.totalAmount, true);
+        const res = await sendTelegramMessage(msg);
+        if (res.success) {
+          showToast(`다가오는 ${nextInfo.month}월 ${nextInfo.day}일 계좌이체 필요 잔고 알림이 전송되었습니다! 📢`);
+        } else {
+          showToast(`전송 실패: ${res.message}`);
+        }
+      } else {
+        showToast('⚠️ 예정된 계좌이체(🏦) 항목이 없습니다.');
+      }
+    });
+
+    // ⭐ 신규: [계좌별 잔고표 전송] 버튼 핸들러
+    $('sendAllAccountScheduleTgBtn').addEventListener('click', async () => {
+      if (!telegramConfig.token || !telegramConfig.chatId) {
+        showToast('먼저 상단 [알림] 버튼을 눌러 텔레그램 설정을 완료해 주세요.');
+        openNotifyModal();
+        return;
+      }
+
+      const msg = buildAllAccountBalanceScheduleMessage();
+      if (!msg) {
+        showToast('⚠️ 등록된 계좌이체 항목이 없습니다.');
+        return;
+      }
+
+      showToast('이번 달 계좌별·특정일 필요 잔고표를 전송 중입니다...');
+      const res = await sendTelegramMessage(msg);
+      if (res.success) {
+        showToast('이번 달 계좌별·특정일 필요 잔고표가 단톡방으로 전송되었습니다! 📋');
+      } else {
+        showToast(`전송 실패: ${res.message}`);
+      }
+    });
+
+    // ⭐ 신규: 개별 계좌 + 특정일 알림 즉시 전송 및 계좌별 탭 필터 토글 위임 핸들러
+    $('expenseViewSection').addEventListener('click', async (e) => {
+      const toggleBtn = e.target.closest('#toggleAccountTabFilterBtn');
+      if (toggleBtn) {
+        accountTabOnlyBankTransfer = !accountTabOnlyBankTransfer;
+        renderExpenseSection();
+        return;
+      }
+
+      const singleSendBtn = e.target.closest('.send-single-acc-day-tg-btn');
+      if (singleSendBtn) {
+        if (!telegramConfig.token || !telegramConfig.chatId) {
+          showToast('먼저 상단 [알림] 버튼을 눌러 텔레그램 설정을 완료해 주세요.');
+          openNotifyModal();
+          return;
+        }
+        const targetDay = Number(singleSendBtn.dataset.day);
+        const targetAcc = singleSendBtn.dataset.acc;
+        const matchingItems = expenses.filter(i =>
+          !checkIsMatured(i) &&
+          isBankAccountTransfer(i) &&
+          getEffectiveDay(i.day) === targetDay &&
+          ((i.paymentDetail || '').trim() || '계좌 미지정') === targetAcc
+        );
+
+        if (matchingItems.length === 0) return;
+
+        const sumAmt = matchingItems.reduce((acc, cur) => acc + cur.amount, 0);
+        const owners = [...new Set(matchingItems.map(i => i.owner || '남편'))];
+        const prevDayLabel = targetDay === 1 ? '전월 말일' : `${currentMonth}월 ${targetDay - 1}일`;
+
+        let msg = `🏦 <b>[부부 가계부] ${currentMonth}월 ${targetDay}일 [${escapeHtml(targetAcc)}] 잔고 준비 알림</b>\n`;
+        msg += `(신용카드 제외 · 계좌이체 합산)\n\n`;
+        msg += `• 출금 계좌: <b>${escapeHtml(targetAcc)}</b> (${escapeHtml(owners.join('·'))})\n`;
+        msg += `• 이체일: 매월 ${targetDay}일\n`;
+        msg += `👉 <b>이체 전날(${prevDayLabel})까지 최소 필요 잔고: ${sumAmt.toLocaleString()}원</b>\n\n`;
+        msg += `📋 <b>포함된 계좌이체 내역 (${matchingItems.length}건):</b>\n`;
+        matchingItems.forEach(it => {
+          msg += `  • ${escapeHtml(it.name)}: ${it.amount.toLocaleString()}원\n`;
+        });
+
+        showToast(`[${targetAcc}] ${targetDay}일 잔고 알림 전송 중...`);
+        const res = await sendTelegramMessage(msg);
+        if (res.success) {
+          showToast(`📢 [${targetAcc}] ${targetDay}일 필요 잔고(${sumAmt.toLocaleString()}원) 알림이 전송되었습니다!`);
+        } else {
+          showToast(`전송 실패: ${res.message}`);
+        }
+      }
+    });
+
     $('btnPrevWeek').addEventListener('click', () => {
       scheduleWeekOffset -= 1;
       renderScheduleSection();
@@ -2675,10 +3326,19 @@ alter publication supabase_realtime add table fixed_expenses;</pre>
         let sum = 0;
         todayExps.forEach(e => {
           sum += e.amount;
-          // ⭐ 수정: e.paymentDetail에 escapeHtml 적용하여 HTML 깨짐 방지
           msg += `• ${escapeHtml(e.name)}: <b>${e.amount.toLocaleString()}원</b> (${escapeHtml(e.paymentDetail || '계좌미지정')})\n`;
         });
         msg += `👉 오늘 총 출금액: <b>${sum.toLocaleString()}원</b>\n`;
+      }
+
+      // 내일(D-1) 계좌이체 예정 내역도 브리핑 하단에 함께 첨부
+      const { tmrYear, tmrMonth, tmrDay, tmrLastDay } = getTomorrowContext();
+      const tmrSummary = getBankTransfersForDay(tmrYear, tmrMonth, tmrDay, tmrLastDay);
+      if (tmrSummary.itemCount > 0) {
+        msg += `\n🚨 <b>내일(${tmrMonth}월 ${tmrDay}일) 계좌이체 필요 잔고 (D-1):</b>\n`;
+        tmrSummary.accounts.forEach(acc => {
+          msg += `• 🏦 [${escapeHtml(acc.accountName)}] 최소 <b>${acc.totalAmount.toLocaleString()}원</b> 준비 필요\n`;
+        });
       }
 
       showToast('부부 단톡방으로 브리핑을 전송 중입니다...');
@@ -2697,6 +3357,7 @@ alter publication supabase_realtime add table fixed_expenses;</pre>
     function openNotifyModal() {
       $('cfgTgToken').value = telegramConfig.token || '';
       $('cfgTgChatId').value = telegramConfig.chatId || '';
+      $('cfgTgNotifyAccountD1').checked = telegramConfig.notifyAccountD1 !== false;
       $('cfgTgNotifySchedule').checked = telegramConfig.notifySchedule !== false;
       $('cfgTgNotifyExpense').checked = Boolean(telegramConfig.notifyExpense);
       notifyModal.classList.remove('hidden');
@@ -2720,7 +3381,7 @@ alter publication supabase_realtime add table fixed_expenses;</pre>
         return;
       }
       showToast('테스트 메시지를 전송하고 있습니다...');
-      const testMsg = `🔔 <b>[부부 플래너] 연결 테스트 성공!</b>\n앞으로 부부의 소중한 일정과 가계 알림이 이 방으로 전달됩니다. ❤️`;
+      const testMsg = `🔔 <b>[부부 플래너] 연결 테스트 성공!</b>\n앞으로 부부의 소중한 일정과 계좌이체 전날(D-1) 필요 잔고 알림이 이 방으로 전달됩니다. ❤️`;
       
       try {
         const res = await fetch(`https://api.telegram.org/bot${tempToken}/sendMessage`, {
@@ -2743,14 +3404,17 @@ alter publication supabase_realtime add table fixed_expenses;</pre>
       e.preventDefault();
       telegramConfig.token = $('cfgTgToken').value.trim();
       telegramConfig.chatId = $('cfgTgChatId').value.trim();
+      telegramConfig.notifyAccountD1 = $('cfgTgNotifyAccountD1').checked;
       telegramConfig.notifySchedule = $('cfgTgNotifySchedule').checked;
       telegramConfig.notifyExpense = $('cfgTgNotifyExpense').checked;
       telegramConfig.updatedAt = Date.now();
 
-      localStorage.setItem(TELEGRAM_CONFIG_KEY, JSON.stringify(telegramConfig));
+      try { localStorage.setItem(TELEGRAM_CONFIG_KEY, JSON.stringify(telegramConfig)); } catch (err) {}
       updateNotifyUI();
+      renderExpenseSection();
       closeNotifyModal();
       await syncMetaToCloud();
+      await checkAndSendAutoD1AccountAlert();
       showToast('텔레그램 알림 설정이 클라우드에 저장되었습니다! 🔔');
     });
 
@@ -2868,7 +3532,7 @@ alter publication supabase_realtime add table fixed_expenses;</pre>
         delBtn.addEventListener('click', async (e) => {
           e.stopPropagation();
           quickTags.splice(idx, 1);
-          localStorage.setItem(QUICK_TAGS_STORAGE_KEY, JSON.stringify(quickTags));
+          try { localStorage.setItem(QUICK_TAGS_STORAGE_KEY, JSON.stringify(quickTags)); } catch (err) {}
           renderQuickTags();
           await syncMetaToCloud();
         });
@@ -2888,7 +3552,7 @@ alter publication supabase_realtime add table fixed_expenses;</pre>
         return;
       }
       quickTags.push(val);
-      localStorage.setItem(QUICK_TAGS_STORAGE_KEY, JSON.stringify(quickTags));
+      try { localStorage.setItem(QUICK_TAGS_STORAGE_KEY, JSON.stringify(quickTags)); } catch (err) {}
       input.value = '';
       renderQuickTags();
       await syncMetaToCloud();
@@ -3394,23 +4058,39 @@ alter publication supabase_realtime add table fixed_expenses;</pre>
     $('closeSyncModalBtn').addEventListener('click', () => syncModal.classList.add('hidden'));
 
     $('copySqlBtn').addEventListener('click', () => {
-      navigator.clipboard.writeText($('sqlSnippet').textContent).then(() => {
-        showToast('SQL 구문이 클립보드에 복사되었습니다.');
-      });
+      const text = $('sqlSnippet').textContent;
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(() => {
+          showToast('SQL 구문이 클립보드에 복사되었습니다.');
+        }).catch(() => {
+          fallbackCopyText(text);
+        });
+      } else {
+        fallbackCopyText(text);
+      }
     });
+
+    function fallbackCopyText(text) {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      document.body.appendChild(ta);
+      ta.select();
+      try { document.execCommand('copy'); showToast('SQL 구문이 클립보드에 복사되었습니다.'); } catch (e) {}
+      document.body.removeChild(ta);
+    }
 
     $('syncConfigForm').addEventListener('submit', async (e) => {
       e.preventDefault();
       const url = cleanSupabaseUrl($('cfgSupabaseUrl').value);
       const key = cleanSupabaseKey($('cfgSupabaseKey').value);
-      localStorage.setItem(CONFIG_STORAGE_KEY, JSON.stringify({ url, key, disabled: false }));
+      try { localStorage.setItem(CONFIG_STORAGE_KEY, JSON.stringify({ url, key, disabled: false })); } catch (err) {}
       syncModal.classList.add('hidden');
       showToast('클라우드 연동 설정이 저장되었습니다.');
       await initSupabaseSync();
     });
 
     $('btnDisconnectSync').addEventListener('click', () => {
-      localStorage.setItem(CONFIG_STORAGE_KEY, JSON.stringify({ disabled: true }));
+      try { localStorage.setItem(CONFIG_STORAGE_KEY, JSON.stringify({ disabled: true })); } catch (err) {}
       stopSmartPolling();
       if (supabaseClient && realtimeChannel) {
         try { supabaseClient.removeChannel(realtimeChannel); } catch (e) {}
@@ -3479,7 +4159,7 @@ alter publication supabase_realtime add table fixed_expenses;</pre>
         quickTags,
         telegramConfig,
         exportedAt: new Date().toISOString(),
-        version: 'v4.4'
+        version: 'v4.5'
       };
       const blob = new Blob([JSON.stringify(backupData, null, 2)], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
@@ -3499,7 +4179,7 @@ alter publication supabase_realtime add table fixed_expenses;</pre>
         try {
           const imported = JSON.parse(event.target.result);
           deletedIds = [];
-          localStorage.setItem(DELETED_IDS_STORAGE_KEY, JSON.stringify([]));
+          try { localStorage.setItem(DELETED_IDS_STORAGE_KEY, JSON.stringify([])); } catch (err) {}
 
           if (Array.isArray(imported)) {
             expenses = imported.map(it => ({
@@ -3509,7 +4189,7 @@ alter publication supabase_realtime add table fixed_expenses;</pre>
               day: Number(it.day) || 1,
               owner: it.owner || '남편'
             }));
-            localStorage.setItem(EXPENSES_STORAGE_KEY, JSON.stringify(expenses));
+            try { localStorage.setItem(EXPENSES_STORAGE_KEY, JSON.stringify(expenses)); } catch (err) {}
             if (supabaseClient && expenses.length > 0) {
               lockMutation();
               await upsertExpensesToCloudWithFallback(expenses);
@@ -3519,7 +4199,7 @@ alter publication supabase_realtime add table fixed_expenses;</pre>
           } else if (imported && typeof imported === 'object') {
             if (Array.isArray(imported.expenses)) {
               expenses = imported.expenses;
-              localStorage.setItem(EXPENSES_STORAGE_KEY, JSON.stringify(expenses));
+              try { localStorage.setItem(EXPENSES_STORAGE_KEY, JSON.stringify(expenses)); } catch (err) {}
               if (supabaseClient && expenses.length > 0) {
                 lockMutation();
                 await upsertExpensesToCloudWithFallback(expenses);
@@ -3528,7 +4208,7 @@ alter publication supabase_realtime add table fixed_expenses;</pre>
             }
             if (Array.isArray(imported.schedules)) {
               schedules = imported.schedules;
-              localStorage.setItem(SCHEDULES_STORAGE_KEY, JSON.stringify(schedules));
+              try { localStorage.setItem(SCHEDULES_STORAGE_KEY, JSON.stringify(schedules)); } catch (err) {}
               if (supabaseClient && schedules.length > 0) {
                 lockMutation();
                 await upsertSchedulesToCloudWithFallback(schedules);
@@ -3537,16 +4217,17 @@ alter publication supabase_realtime add table fixed_expenses;</pre>
             }
             if (Array.isArray(imported.quickTags)) {
               quickTags = imported.quickTags;
-              localStorage.setItem(QUICK_TAGS_STORAGE_KEY, JSON.stringify(quickTags));
+              try { localStorage.setItem(QUICK_TAGS_STORAGE_KEY, JSON.stringify(quickTags)); } catch (err) {}
             }
             if (imported.telegramConfig) {
               telegramConfig = { ...telegramConfig, ...imported.telegramConfig };
-              localStorage.setItem(TELEGRAM_CONFIG_KEY, JSON.stringify(telegramConfig));
+              try { localStorage.setItem(TELEGRAM_CONFIG_KEY, JSON.stringify(telegramConfig)); } catch (err) {}
             }
             await syncMetaToCloud();
             showToast(`통합 데이터 (지출 ${expenses.length}건, 일정 ${schedules.length}건) 클라우드 복원 완료!`);
           }
           renderAll();
+          await checkAndSendAutoD1AccountAlert();
         } catch (err) {
           showToast('⚠️ 올바른 백업 파일(JSON)이 아닙니다.');
         } finally {
