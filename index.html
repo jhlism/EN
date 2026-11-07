@@ -104,17 +104,22 @@
       </div>
     </div>
 
-    <!-- ⭐ 메인 뷰 스위처 (고정지출 vs 부부 일정) ⭐ -->
-    <nav class="grid grid-cols-2 gap-1.5 p-1 bg-slate-200/80 rounded-2xl mb-3.5">
-      <button type="button" id="mainTabExpense" class="py-2.5 px-2 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition bg-white text-indigo-700 shadow-sm">
-        <i data-lucide="wallet-cards" class="w-4 h-4 shrink-0"></i>
-        <span>고정지출 & 저축</span>
-        <span id="badgeExpenseCount" class="text-[10px] bg-indigo-50 text-indigo-600 px-1.5 py-0.5 rounded-full font-semibold">0</span>
+    <!-- ⭐ 메인 뷰 스위처 (고정지출 vs 부부 일정 vs 장보기·할일) ⭐ -->
+    <nav class="grid grid-cols-3 gap-1 p-1 bg-slate-200/80 rounded-2xl mb-3.5">
+      <button type="button" id="mainTabExpense" class="py-2.5 px-1.5 rounded-xl font-bold text-[11px] sm:text-xs flex items-center justify-center gap-1 transition bg-white text-indigo-700 shadow-sm">
+        <i data-lucide="wallet-cards" class="w-3.5 h-3.5 shrink-0"></i>
+        <span class="truncate">고정지출 & 저축</span>
+        <span id="badgeExpenseCount" class="text-[10px] bg-indigo-50 text-indigo-600 px-1.5 py-0.5 rounded-full font-semibold shrink-0">0</span>
       </button>
-      <button type="button" id="mainTabSchedule" class="py-2.5 px-2 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition text-slate-600 hover:text-slate-900">
-        <i data-lucide="calendar-heart" class="w-4 h-4 text-rose-500 shrink-0"></i>
-        <span>부부 일정공유</span>
-        <span id="badgeScheduleCount" class="text-[10px] bg-rose-50 text-rose-600 px-1.5 py-0.5 rounded-full font-semibold">0</span>
+      <button type="button" id="mainTabSchedule" class="py-2.5 px-1.5 rounded-xl font-bold text-[11px] sm:text-xs flex items-center justify-center gap-1 transition text-slate-600 hover:text-slate-900">
+        <i data-lucide="calendar-heart" class="w-3.5 h-3.5 text-rose-500 shrink-0"></i>
+        <span class="truncate">부부 일정공유</span>
+        <span id="badgeScheduleCount" class="text-[10px] bg-rose-50 text-rose-600 px-1.5 py-0.5 rounded-full font-semibold shrink-0">0</span>
+      </button>
+      <button type="button" id="mainTabTodo" class="py-2.5 px-1.5 rounded-xl font-bold text-[11px] sm:text-xs flex items-center justify-center gap-1 transition text-slate-600 hover:text-slate-900">
+        <i data-lucide="shopping-cart" class="w-3.5 h-3.5 text-emerald-600 shrink-0"></i>
+        <span class="truncate">장보기·할일</span>
+        <span id="badgeTodoCount" class="text-[10px] bg-emerald-50 text-emerald-700 px-1.5 py-0.5 rounded-full font-semibold shrink-0">0</span>
       </button>
     </nav>
 
@@ -439,6 +444,166 @@
       </div>
     </main>
 
+    <!-- ========================================================================= -->
+    <!-- 3️⃣ [VIEW] 공동 장보기 & 부부 TODO 리스트 뷰 영역 -->
+    <!-- ========================================================================= -->
+    <main id="todoViewSection" class="hidden space-y-3.5">
+      <!-- 상단 텔레그램 단톡방 원터치 공유 센터 -->
+      <section class="bg-gradient-to-br from-emerald-50/90 via-white to-teal-50/60 rounded-2xl border border-emerald-200 p-3.5 shadow-sm space-y-2.5">
+        <div class="flex items-start gap-2">
+          <div class="w-7 h-7 rounded-xl bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-xs mt-0.5">
+            <i data-lucide="shopping-bag" class="w-4 h-4"></i>
+          </div>
+          <div class="min-w-0 flex-1">
+            <div class="flex items-center gap-1.5 flex-wrap">
+              <h2 class="text-xs sm:text-sm font-bold text-slate-900">공동 장보기 &amp; 부부 할일(TODO) 보드</h2>
+              <span class="text-[10px] bg-emerald-100 text-emerald-800 border border-emerald-200 px-1.5 py-0.5 rounded-md font-bold">실시간 동기화 · 텔레그램 연동</span>
+            </div>
+            <p class="text-[11px] text-slate-500 mt-0.5 leading-snug" id="todoTgStatusText">장볼 품목과 집안일을 함께 체크하고, 퇴근길 부부 단톡방으로 즉시 쏠 수 있습니다.</p>
+          </div>
+        </div>
+
+        <!-- 현황 요약 배지 바 -->
+        <div class="grid grid-cols-3 gap-1.5 bg-white/90 p-2 rounded-xl border border-emerald-100 text-center">
+          <div>
+            <span class="text-[10px] text-slate-500 block">🛒 남은 장보기</span>
+            <span id="summaryShoppingCount" class="text-xs sm:text-sm font-extrabold text-emerald-700">0건</span>
+          </div>
+          <div class="border-x border-slate-100">
+            <span class="text-[10px] text-slate-500 block">✅ 남은 할일</span>
+            <span id="summaryTaskCount" class="text-xs sm:text-sm font-extrabold text-indigo-700">0건</span>
+          </div>
+          <div>
+            <span class="text-[10px] text-slate-500 block">🚨 급함(오늘 꼭)</span>
+            <span id="summaryUrgentCount" class="text-xs sm:text-sm font-extrabold text-rose-600">0건</span>
+          </div>
+        </div>
+
+        <!-- 원터치 텔레그램 발송 버튼 2종 -->
+        <div class="grid grid-cols-2 gap-1.5">
+          <button type="button" id="sendShoppingListTgBtn" class="py-2 px-2 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white rounded-xl text-[11px] font-bold shadow-xs transition flex items-center justify-center gap-1">
+            <i data-lucide="shopping-cart" class="w-3.5 h-3.5 shrink-0"></i>
+            <span class="truncate">🛒 장보기 목록 전송</span>
+          </button>
+          <button type="button" id="sendTodoListTgBtn" class="py-2 px-2 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white rounded-xl text-[11px] font-bold shadow-xs transition flex items-center justify-center gap-1">
+            <i data-lucide="check-square" class="w-3.5 h-3.5 shrink-0"></i>
+            <span class="truncate">✅ 미완료 할일 전송</span>
+          </button>
+        </div>
+      </section>
+
+      <!-- ⚡ 1초 인라인 빠른 등록 카드 (구매처 선택값 지원) -->
+      <section class="bg-white rounded-2xl border border-slate-200 p-3.5 shadow-sm space-y-3">
+        <form id="todoQuickForm" class="space-y-2.5 text-xs">
+          <input type="hidden" id="todoEditId" value="" />
+          <!-- 1. 구분 선택: 🛒 장보기 vs ✅ 할일(TODO) -->
+          <div class="grid grid-cols-2 gap-1.5 bg-slate-100 p-1 rounded-xl">
+            <button type="button" id="btnTodoKindShopping" class="py-2 rounded-lg font-bold text-xs flex items-center justify-center gap-1.5 bg-white text-emerald-700 shadow-xs transition">
+              <span>🛒 장보기 (살 것)</span>
+            </button>
+            <button type="button" id="btnTodoKindTask" class="py-2 rounded-lg font-semibold text-xs flex items-center justify-center gap-1.5 text-slate-600 hover:text-slate-900 transition">
+              <span>✅ 부부 할일 (TODO)</span>
+            </button>
+          </div>
+          <input type="hidden" id="todoKindInput" value="shopping" />
+
+          <!-- 2. 담당 주체 & 긴급 여부 선택 -->
+          <div class="flex items-center justify-between gap-1.5 flex-wrap">
+            <div class="inline-flex bg-slate-100 p-0.5 rounded-xl border border-slate-200/70">
+              <button type="button" data-towner="both" class="towner-btn px-2.5 py-1 rounded-lg text-[11px] font-bold bg-purple-600 text-white shadow-xs transition">🟣 함께</button>
+              <button type="button" data-towner="husband" class="towner-btn px-2.5 py-1 rounded-lg text-[11px] font-medium text-slate-600 hover:text-slate-900 transition">🔵 남편</button>
+              <button type="button" data-towner="wife" class="towner-btn px-2.5 py-1 rounded-lg text-[11px] font-medium text-slate-600 hover:text-slate-900 transition">🔴 아내</button>
+            </div>
+            <input type="hidden" id="todoOwnerInput" value="both" />
+
+            <button type="button" id="btnToggleTodoUrgent" class="px-2.5 py-1 rounded-xl border text-[11px] font-semibold bg-white border-slate-200 text-slate-500 transition flex items-center gap-1">
+              <span>🚨 급함(오늘 꼭)</span>
+            </button>
+          </div>
+
+          <!-- 3. 구매처 선택 (선택값 - 기본값: 미지정, 장보기 모드일 때 표시) -->
+          <div id="todoStoreSelectWrap" class="space-y-1.5 pt-0.5">
+            <div class="flex items-center justify-between">
+              <span class="text-[11px] font-semibold text-slate-600">구매처 <span class="text-[10px] font-normal text-slate-400">(선택사항 · 안 골라도 바로 등록됩니다)</span></span>
+              <span id="selectedStorePreview" class="text-[10px] text-emerald-700 font-bold">미지정 (자유)</span>
+            </div>
+            <div class="flex items-center gap-1 flex-wrap">
+              <button type="button" data-store="" class="store-chip-btn px-2 py-1 rounded-lg border text-[11px] font-bold bg-slate-800 border-slate-800 text-white transition">선택안함</button>
+              <button type="button" data-store="마트·식재료" class="store-chip-btn px-2 py-1 rounded-lg border text-[11px] font-medium bg-white border-slate-200 text-slate-600 hover:bg-slate-50 transition">🛒 마트·식재료</button>
+              <button type="button" data-store="쿠팡·온라인" class="store-chip-btn px-2 py-1 rounded-lg border text-[11px] font-medium bg-white border-slate-200 text-slate-600 hover:bg-slate-50 transition">📦 쿠팡·온라인</button>
+              <button type="button" data-store="다이소·생필품" class="store-chip-btn px-2 py-1 rounded-lg border text-[11px] font-medium bg-white border-slate-200 text-slate-600 hover:bg-slate-50 transition">🧻 다이소·생필품</button>
+              <button type="button" data-store="약국·기타" class="store-chip-btn px-2 py-1 rounded-lg border text-[11px] font-medium bg-white border-slate-200 text-slate-600 hover:bg-slate-50 transition">💊 약국·기타</button>
+            </div>
+            <input type="text" id="todoCustomStoreInput" placeholder="직접 구매처 입력 (선택, 예: 코스트코, 컬리, 동네정육점)" class="w-full px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-[11px] focus:bg-white focus:outline-none focus:ring-1 focus:ring-emerald-500" />
+          </div>
+
+          <!-- 4. 품목명 / 할일 내용 입력 & 즉시 등록 버튼 -->
+          <div class="flex gap-1.5">
+            <input type="text" id="todoTitleInput" required placeholder="살 것 또는 할 일 입력 (예: 우유 2개, 분리수거)" class="flex-1 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-medium focus:bg-white focus:ring-2 focus:ring-emerald-500 focus:outline-none" />
+            <button type="button" id="cancelTodoEditBtn" class="hidden px-2.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl text-xs font-bold shrink-0">취소</button>
+            <button type="submit" id="submitTodoBtn" class="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-xs transition shrink-0 flex items-center gap-1">
+              <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+              <span id="submitTodoBtnText">담기</span>
+            </button>
+          </div>
+          <input type="text" id="todoMemoInput" placeholder="수량/메모 (선택, 예: 1+1 행사상품, 세탁물 3벌)" class="w-full px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-[11px] focus:bg-white focus:outline-none focus:ring-1 focus:ring-emerald-500" />
+        </form>
+
+        <!-- ⚡ 원터치 단골 품목/할일 칩 (터치 즉시 장바구니/할일에 담기!) -->
+        <div class="pt-2 border-t border-slate-100 space-y-2">
+          <div class="flex items-center justify-between gap-1">
+            <span class="text-[10px] font-bold text-slate-500">⚡ 원터치 단골 키워드 (터치 시 즉시 리스트에 추가 · 클라우드 공유)</span>
+          </div>
+          <div id="todoQuickChipContainer" class="flex flex-wrap gap-1"></div>
+          <div class="flex items-center gap-1.5 pt-1">
+            <input type="text" id="newTodoChipInput" placeholder="단골 키워드 추가 (예: 바나나 🍌, 영양제 💊)" class="flex-1 px-2.5 py-1 bg-slate-50 border border-slate-200 rounded-lg text-[11px] focus:bg-white focus:outline-none focus:ring-1 focus:ring-emerald-400" />
+            <button type="button" id="addNewTodoChipBtn" class="px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-bold rounded-lg text-[11px] border border-emerald-200 transition shrink-0">
+              + 키워드 저장
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- 필터 바 & 완료 항목 정리 컨트롤 -->
+      <div class="bg-white p-2.5 rounded-2xl border border-slate-200 shadow-xs space-y-2">
+        <div class="flex items-center gap-1 overflow-x-auto no-scrollbar">
+          <button type="button" data-tfilter="all" class="todo-filter-btn px-2.5 py-1.5 rounded-lg text-[11px] font-bold bg-slate-800 text-white shrink-0 transition">전체</button>
+          <button type="button" data-tfilter="shopping" class="todo-filter-btn px-2.5 py-1.5 rounded-lg text-[11px] font-medium bg-slate-100 text-slate-600 hover:bg-emerald-50 hover:text-emerald-700 shrink-0 transition">🛒 장보기만</button>
+          <button type="button" data-tfilter="task" class="todo-filter-btn px-2.5 py-1.5 rounded-lg text-[11px] font-medium bg-slate-100 text-slate-600 hover:bg-indigo-50 hover:text-indigo-700 shrink-0 transition">✅ 할일만</button>
+          <button type="button" data-tfilter="urgent" class="todo-filter-btn px-2.5 py-1.5 rounded-lg text-[11px] font-medium bg-slate-100 text-slate-600 hover:bg-rose-50 hover:text-rose-700 shrink-0 transition">🚨 급함</button>
+          <button type="button" data-tfilter="husband" class="todo-filter-btn px-2.5 py-1.5 rounded-lg text-[11px] font-medium bg-slate-100 text-slate-600 shrink-0 transition">🔵 남편</button>
+          <button type="button" data-tfilter="wife" class="todo-filter-btn px-2.5 py-1.5 rounded-lg text-[11px] font-medium bg-slate-100 text-slate-600 shrink-0 transition">🔴 아내</button>
+          <button type="button" data-tfilter="both" class="todo-filter-btn px-2.5 py-1.5 rounded-lg text-[11px] font-medium bg-slate-100 text-slate-600 shrink-0 transition">🟣 함께</button>
+        </div>
+      </div>
+
+      <!-- 미완료(진행 중) 장보기 & 할일 리스트 -->
+      <div id="todoActiveList" class="space-y-2"></div>
+
+      <!-- 빈 상태 안내 -->
+      <div id="todoEmptyState" class="hidden text-center py-10 bg-white rounded-2xl border border-dashed border-slate-200">
+        <i data-lucide="shopping-cart" class="w-10 h-10 mx-auto text-emerald-300 mb-2"></i>
+        <p class="text-xs text-slate-600 font-bold">남은 장보기나 할 일 항목이 없습니다.</p>
+        <p class="text-[11px] text-slate-400 mt-0.5">위 단골 키워드를 터치하거나 필요한 품목을 가볍게 담아보세요!</p>
+      </div>
+
+      <!-- 완료된 항목 영역 (다시 담기 & 일괄 비우기 지원) -->
+      <section id="todoCompletedSection" class="hidden bg-slate-100/80 rounded-2xl border border-slate-200/90 p-3 space-y-2">
+        <div class="flex items-center justify-between gap-2">
+          <span class="text-xs font-bold text-slate-600 flex items-center gap-1.5">
+            <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-600"></i>
+            <span id="todoCompletedHeaderCount">완료된 항목 (0건)</span>
+          </span>
+          <button type="button" id="clearCompletedTodosBtn" class="px-2.5 py-1 bg-white hover:bg-rose-50 text-slate-600 hover:text-rose-600 border border-slate-200 rounded-lg text-[11px] font-bold transition flex items-center gap-1">
+            <i data-lucide="trash-2" class="w-3 h-3"></i>
+            <span>완료 항목 비우기</span>
+          </button>
+        </div>
+        <p class="text-[10px] text-slate-400">💡 자주 사는 품목은 <b>[🔄 다시 담기]</b>를 누르면 미완료 목록으로 즉시 올라갑니다.</p>
+        <div id="todoCompletedList" class="space-y-1.5"></div>
+      </section>
+    </main>
+
   </div>
 
   <!-- ========================================================================= -->
@@ -483,6 +648,10 @@
           <label class="flex items-center gap-2 cursor-pointer">
             <input type="checkbox" id="cfgTgNotifySchedule" checked class="rounded text-sky-600 focus:ring-sky-500" />
             <span class="font-medium">일정 등록·수정·삭제 시 즉시 알림</span>
+          </label>
+          <label class="flex items-center gap-2 cursor-pointer">
+            <input type="checkbox" id="cfgTgNotifyTodo" checked class="rounded text-sky-600 focus:ring-sky-500" />
+            <span class="font-bold text-emerald-900">🛒 장보기·할일(TODO) 등록 및 완료 시 자동 알림</span>
           </label>
           <label class="flex items-center gap-2 cursor-pointer">
             <input type="checkbox" id="cfgTgNotifyExpense" class="rounded text-sky-600 focus:ring-sky-500" />
@@ -929,12 +1098,15 @@ alter publication supabase_realtime add table fixed_expenses;</pre>
     const CONFIG_STORAGE_KEY = 'budget_supabase_config';
     const EXPENSES_STORAGE_KEY = 'fixed_expenses_v4';
     const SCHEDULES_STORAGE_KEY = 'couple_schedules_v1';
+    const TODOS_STORAGE_KEY = 'couple_todos_v1';
     const QUICK_TAGS_STORAGE_KEY = 'couple_quick_tags_v1';
+    const TODO_CHIPS_STORAGE_KEY = 'couple_todo_chips_v1';
     const TELEGRAM_CONFIG_KEY = 'couple_telegram_config_v1';
     const DELETED_IDS_STORAGE_KEY = 'couple_deleted_ids_v1';
     const HISTORY_STORAGE_PREFIX = 'budget_frequent_';
 
     const SCHED_ROW_PREFIX = '__sched__';
+    const TODO_ROW_PREFIX = '__todo__';
     const META_ROW_ID = '__app_meta__';
 
     let supabaseClient = null;
@@ -983,6 +1155,7 @@ alter publication supabase_realtime add table fixed_expenses;</pre>
       notifyAccountD1: true,
       notifyScheduleD1: true,
       notifySchedule: true,
+      notifyTodo: true,
       notifyExpense: false,
       lastD1NotifiedKey: '',
       lastSchedD1NotifiedKey: '',
@@ -1002,6 +1175,28 @@ alter publication supabase_realtime add table fixed_expenses;</pre>
       quickTags = [...DEFAULT_TAGS];
     }
 
+    const DEFAULT_TODO_CHIPS = [
+      { label: '우유 🥛', kind: 'shopping' },
+      { label: '계란 🥚', kind: 'shopping' },
+      { label: '생수 💧', kind: 'shopping' },
+      { label: '두부', kind: 'shopping' },
+      { label: '양파·대파', kind: 'shopping' },
+      { label: '삼겹살 🥩', kind: 'shopping' },
+      { label: '물티슈', kind: 'shopping' },
+      { label: '종량제봉투', kind: 'shopping' },
+      { label: '분리수거 ♻️', kind: 'task' },
+      { label: '세탁소 찾기 👕', kind: 'task' },
+      { label: '택배 반품 📦', kind: 'task' },
+      { label: '청소기 돌리기', kind: 'task' }
+    ];
+    let todoChips = [];
+    try {
+      const savedTodoChips = localStorage.getItem(TODO_CHIPS_STORAGE_KEY);
+      todoChips = savedTodoChips ? JSON.parse(savedTodoChips) : [...DEFAULT_TODO_CHIPS];
+    } catch (e) {
+      todoChips = [...DEFAULT_TODO_CHIPS];
+    }
+
     let rawExpenses = null;
     try {
       rawExpenses = localStorage.getItem(EXPENSES_STORAGE_KEY) || localStorage.getItem('fixed_expenses_v3');
@@ -1009,7 +1204,12 @@ alter publication supabase_realtime add table fixed_expenses;</pre>
     let expenses = [];
     try {
       expenses = rawExpenses ? JSON.parse(rawExpenses) : [];
-      expenses = expenses.filter(e => e && !String(e.id).startsWith(SCHED_ROW_PREFIX) && String(e.id) !== META_ROW_ID);
+      expenses = expenses.filter(e =>
+        e &&
+        !String(e.id).startsWith(SCHED_ROW_PREFIX) &&
+        !String(e.id).startsWith(TODO_ROW_PREFIX) &&
+        String(e.id) !== META_ROW_ID
+      );
     } catch (e) {
       expenses = [];
     }
@@ -1024,6 +1224,25 @@ alter publication supabase_realtime add table fixed_expenses;</pre>
     } catch (e) {
       schedules = [];
     }
+
+    let rawTodos = null;
+    try {
+      rawTodos = localStorage.getItem(TODOS_STORAGE_KEY);
+    } catch (e) {}
+    let todos = [];
+    try {
+      todos = rawTodos ? JSON.parse(rawTodos) : [];
+    } catch (e) {
+      todos = [];
+    }
+
+    let currentTodoKind = 'shopping';
+    let currentTodoOwner = 'both';
+    let currentTodoUrgent = false;
+    let currentTodoStorePreset = '';
+    let currentTodoFilter = 'all';
+    let pendingTodoDeleteId = null;
+    let pendingTodoDeleteTimer = null;
 
     let activeMainTab = 'expense';
     let currentFilter = 'all';
@@ -1644,9 +1863,78 @@ alter publication supabase_realtime add table fixed_expenses;</pre>
       };
     }
 
+    function mapTodoToExpenseRow(todo, includeOwnerCol = true) {
+      const rawId = String(todo.id).replace(/^__todo__/, '');
+      const jsonMemo = JSON.stringify({
+        id: rawId,
+        kind: todo.kind || 'shopping',
+        title: todo.title || '품목',
+        owner: todo.owner || 'both',
+        store: (todo.store || '').trim(),
+        memo: (todo.memo || '').trim(),
+        isUrgent: Boolean(todo.isUrgent),
+        completed: Boolean(todo.completed),
+        completedAt: todo.completedAt || null,
+        createdAt: todo.createdAt || new Date().toISOString()
+      });
+      const payload = {
+        id: TODO_ROW_PREFIX + rawId,
+        name: todo.title || '품목',
+        amount: 0,
+        base_amount: null,
+        is_variable: Boolean(todo.completed),
+        day: 1,
+        category: '__TODO__',
+        type: '__TODO__',
+        payment_method: todo.kind || 'shopping',
+        payment_detail: (todo.store || '').trim(),
+        memo: jsonMemo,
+        duration_months: null,
+        start_year_month: null
+      };
+      if (includeOwnerCol) {
+        payload.owner = todo.owner || 'both';
+      }
+      return payload;
+    }
+
+    function mapTodoFromExpenseRow(row) {
+      const cleanMemo = (row.memo || '').replace(/^\[명의:[^\]]+\]\s*/, '').trim();
+      try {
+        const parsed = JSON.parse(cleanMemo);
+        if (parsed && parsed.title) {
+          return {
+            id: String(parsed.id || String(row.id).replace(/^__todo__/, '')),
+            kind: parsed.kind || row.payment_method || 'shopping',
+            title: parsed.title,
+            owner: parsed.owner || row.owner || 'both',
+            store: (parsed.store !== undefined ? parsed.store : (row.payment_detail || '')).trim(),
+            memo: (parsed.memo || '').trim(),
+            isUrgent: Boolean(parsed.isUrgent),
+            completed: Boolean(parsed.completed),
+            completedAt: parsed.completedAt || null,
+            createdAt: parsed.createdAt || new Date().toISOString()
+          };
+        }
+      } catch (e) {}
+      return {
+        id: String(row.id).replace(/^__todo__/, ''),
+        kind: row.payment_method === 'task' ? 'task' : 'shopping',
+        title: row.name || '항목',
+        owner: row.owner || 'both',
+        store: (row.payment_detail || '').trim(),
+        memo: '',
+        isUrgent: false,
+        completed: Boolean(row.is_variable),
+        completedAt: null,
+        createdAt: new Date().toISOString()
+      };
+    }
+
     function mapMetaToExpenseRow(includeOwnerCol = true) {
       const jsonMemo = JSON.stringify({
         quickTags,
+        todoChips,
         telegramConfig,
         updatedAt: Date.now()
       });
@@ -1681,6 +1969,12 @@ alter publication supabase_realtime add table fixed_expenses;</pre>
           quickTags = parsed.quickTags;
           try { localStorage.setItem(QUICK_TAGS_STORAGE_KEY, JSON.stringify(quickTags)); } catch (e) {}
           renderQuickTags();
+          changed = true;
+        }
+        if (Array.isArray(parsed.todoChips) && JSON.stringify(parsed.todoChips) !== JSON.stringify(todoChips)) {
+          todoChips = parsed.todoChips;
+          try { localStorage.setItem(TODO_CHIPS_STORAGE_KEY, JSON.stringify(todoChips)); } catch (e) {}
+          renderTodoQuickChips();
           changed = true;
         }
         if (parsed.telegramConfig && parsed.telegramConfig.token) {
@@ -1814,6 +2108,13 @@ alter publication supabase_realtime add table fixed_expenses;</pre>
       return res;
     }
 
+    async function upsertTodosToCloudWithFallback(todosArray) {
+      if (!todosArray || todosArray.length === 0) return { error: null };
+      return await upsertRowsToFixedExpensesTable(includeOwner =>
+        todosArray.map(t => mapTodoToExpenseRow(t, includeOwner))
+      );
+    }
+
     async function syncMetaToCloud() {
       if (!supabaseClient) return;
       lockMutation();
@@ -1846,8 +2147,10 @@ alter publication supabase_realtime add table fixed_expenses;</pre>
         // --- 1. 고정지출 양방향 병합 ---
         const rawExpenseRows = allRows.filter(r =>
           !String(r.id).startsWith(SCHED_ROW_PREFIX) &&
+          !String(r.id).startsWith(TODO_ROW_PREFIX) &&
           String(r.id) !== META_ROW_ID &&
           r.category !== '__SCHEDULE__' &&
+          r.category !== '__TODO__' &&
           r.category !== '__META__'
         );
         const cloudExpMap = new Map();
@@ -1922,6 +2225,35 @@ alter publication supabase_realtime add table fixed_expenses;</pre>
 
         if (localOnlySchedules.length > 0) {
           await upsertSchedulesToCloudWithFallback(localOnlySchedules);
+        }
+
+        // --- 2-2. 장보기·할일(TODO) 양방향 병합 ---
+        const rawTodoRows = allRows.filter(r =>
+          String(r.id).startsWith(TODO_ROW_PREFIX) || r.category === '__TODO__'
+        );
+        const cloudTodoMap = new Map();
+        rawTodoRows.forEach(r => {
+          const t = mapTodoFromExpenseRow(r);
+          if (!deletedIds.includes(String(t.id))) {
+            cloudTodoMap.set(String(t.id), t);
+          }
+        });
+        const localOnlyTodos = [];
+        todos.forEach(localTodo => {
+          const idStr = String(localTodo.id);
+          if (!deletedIds.includes(idStr) && !cloudTodoMap.has(idStr)) {
+            cloudTodoMap.set(idStr, localTodo);
+            localOnlyTodos.push(localTodo);
+          }
+        });
+        const mergedTodos = Array.from(cloudTodoMap.values());
+        if (serializeById(todos) !== serializeById(mergedTodos)) {
+          todos = mergedTodos;
+          try { localStorage.setItem(TODOS_STORAGE_KEY, JSON.stringify(todos)); } catch (e) {}
+          hasDiff = true;
+        }
+        if (localOnlyTodos.length > 0) {
+          await upsertTodosToCloudWithFallback(localOnlyTodos);
         }
 
         // --- 3. 메타 데이터 반영 ---
@@ -1999,8 +2331,10 @@ alter publication supabase_realtime add table fixed_expenses;</pre>
 
         const rawExpenseRows = (allRows || []).filter(r =>
           !String(r.id).startsWith(SCHED_ROW_PREFIX) &&
+          !String(r.id).startsWith(TODO_ROW_PREFIX) &&
           String(r.id) !== META_ROW_ID &&
           r.category !== '__SCHEDULE__' &&
+          r.category !== '__TODO__' &&
           r.category !== '__META__'
         );
         const cloudExpMap = new Map();
@@ -2061,6 +2395,32 @@ alter publication supabase_realtime add table fixed_expenses;</pre>
         if (localOnlySchedules.length > 0) {
           lockMutation();
           await upsertSchedulesToCloudWithFallback(localOnlySchedules);
+          unlockMutationAfter(800);
+        }
+
+        const rawTodoRows = (allRows || []).filter(r =>
+          String(r.id).startsWith(TODO_ROW_PREFIX) || r.category === '__TODO__'
+        );
+        const cloudTodoMap = new Map();
+        rawTodoRows.forEach(r => {
+          const t = mapTodoFromExpenseRow(r);
+          if (!deletedIds.includes(String(t.id))) {
+            cloudTodoMap.set(String(t.id), t);
+          }
+        });
+        const localOnlyTodos = [];
+        todos.forEach(localTodo => {
+          const idStr = String(localTodo.id);
+          if (!deletedIds.includes(idStr) && !cloudTodoMap.has(idStr)) {
+            cloudTodoMap.set(idStr, localTodo);
+            localOnlyTodos.push(localTodo);
+          }
+        });
+        todos = Array.from(cloudTodoMap.values());
+        try { localStorage.setItem(TODOS_STORAGE_KEY, JSON.stringify(todos)); } catch (e) {}
+        if (localOnlyTodos.length > 0) {
+          lockMutation();
+          await upsertTodosToCloudWithFallback(localOnlyTodos);
           unlockMutationAfter(800);
         }
 
@@ -3353,9 +3713,297 @@ alter publication supabase_realtime add table fixed_expenses;</pre>
       lucide.createIcons();
     }
 
+    async function syncSaveTodo(todoObj, actionType = 'save') {
+      const cleanId = String(todoObj.id).replace(/^__todo__/, '');
+      const normalized = { ...todoObj, id: cleanId };
+      const idx = todos.findIndex(t => String(t.id) === cleanId);
+      if (idx !== -1) todos[idx] = normalized;
+      else todos.unshift(normalized);
+
+      try { localStorage.setItem(TODOS_STORAGE_KEY, JSON.stringify(todos)); } catch (e) {}
+      renderTodoSection();
+
+      let cloudOk = false;
+      let errMsg = '';
+      if (supabaseClient) {
+        lockMutation();
+        try {
+          const { error } = await upsertTodosToCloudWithFallback([normalized]);
+          if (error) errMsg = error.message;
+          else cloudOk = true;
+        } finally {
+          unlockMutationAfter(1200);
+        }
+      }
+
+      if (telegramConfig.notifyTodo !== false && telegramConfig.token && telegramConfig.chatId) {
+        const ownerLabels = { husband: '남편 🔵', wife: '아내 🔴', both: '함께 🟣' };
+        const kindLabel = normalized.kind === 'task' ? '✅ 부부 할일(TODO)' : '🛒 공동 장보기';
+        const storeLine = (normalized.kind === 'shopping' && normalized.store)
+          ? `
+• 구매처: <b>${escapeHtml(normalized.store)}</b>`
+          : '';
+        const memoLine = normalized.memo
+          ? `
+• 메모: ${escapeHtml(normalized.memo)}`
+          : '';
+        const urgentBadge = normalized.isUrgent ? ' 🚨<b>[급함]</b>' : '';
+
+        if (actionType === 'add') {
+          const msg = `${normalized.kind === 'task' ? '📌' : '🛒'} <b>[부부 플래너] 새 ${kindLabel} 등록!</b>${urgentBadge}
+• 담당: ${ownerLabels[normalized.owner] || '함께 🟣'}${storeLine}
+• 내용: <b>${escapeHtml(normalized.title)}</b>${memoLine}`;
+          sendTelegramMessage(msg);
+        } else if (actionType === 'complete' && normalized.completed) {
+          const msg = `🎉 <b>[완료 체크] ${kindLabel}</b>
+• <s>${escapeHtml(normalized.title)}</s> (${ownerLabels[normalized.owner] || '함께'}) 완료되었습니다! ✓`;
+          sendTelegramMessage(msg);
+        }
+      }
+
+      return { cloudOk, errMsg };
+    }
+
+    async function syncDeleteTodo(id) {
+      const cleanId = String(id).replace(/^__todo__/, '');
+      markIdDeleted(cleanId);
+      markIdDeleted(TODO_ROW_PREFIX + cleanId);
+      todos = todos.filter(t => String(t.id) !== cleanId);
+      try { localStorage.setItem(TODOS_STORAGE_KEY, JSON.stringify(todos)); } catch (e) {}
+      renderTodoSection();
+
+      if (supabaseClient) {
+        lockMutation();
+        try {
+          await supabaseClient
+            .from('fixed_expenses')
+            .delete()
+            .in('id', [TODO_ROW_PREFIX + cleanId, cleanId]);
+        } finally {
+          unlockMutationAfter(1200);
+        }
+      }
+    }
+
+    async function syncClearCompletedTodos() {
+      const completedItems = todos.filter(t => t.completed);
+      if (completedItems.length === 0) return;
+
+      const idsToDelete = [];
+      completedItems.forEach(t => {
+        const cleanId = String(t.id).replace(/^__todo__/, '');
+        markIdDeleted(cleanId);
+        markIdDeleted(TODO_ROW_PREFIX + cleanId);
+        idsToDelete.push(cleanId, TODO_ROW_PREFIX + cleanId);
+      });
+
+      todos = todos.filter(t => !t.completed);
+      try { localStorage.setItem(TODOS_STORAGE_KEY, JSON.stringify(todos)); } catch (e) {}
+      renderTodoSection();
+
+      if (supabaseClient && idsToDelete.length > 0) {
+        lockMutation();
+        try {
+          await supabaseClient.from('fixed_expenses').delete().in('id', idsToDelete);
+        } finally {
+          unlockMutationAfter(1200);
+        }
+      }
+    }
+
+    function renderTodoQuickChips() {
+      const container = $('todoQuickChipContainer');
+      if (!container) return;
+      container.innerHTML = '';
+
+      const filteredChips = todoChips.filter(c => !c.kind || c.kind === currentTodoKind);
+
+      filteredChips.forEach(chipObj => {
+        const realIdx = todoChips.indexOf(chipObj);
+        const wrap = document.createElement('div');
+        wrap.className = 'inline-flex items-center bg-slate-50 border border-slate-200 rounded-lg text-[11px] text-slate-700 font-medium overflow-hidden hover:border-emerald-400 transition';
+
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'px-2 py-1 hover:bg-emerald-50 hover:text-emerald-700 font-semibold transition';
+        btn.textContent = `+ ${chipObj.label}`;
+        btn.title = '터치 시 즉시 목록에 추가됩니다';
+        btn.addEventListener('click', async () => {
+          const customStore = ($('todoCustomStoreInput')?.value || '').trim();
+          const finalStore = currentTodoKind === 'shopping' ? (customStore || currentTodoStorePreset) : '';
+          const newItem = {
+            id: Date.now().toString() + Math.random().toString(36).substr(2, 4),
+            kind: currentTodoKind,
+            title: chipObj.label,
+            owner: currentTodoOwner || 'both',
+            store: finalStore,
+            memo: '',
+            isUrgent: currentTodoUrgent,
+            completed: false,
+            completedAt: null,
+            createdAt: new Date().toISOString()
+          };
+          await syncSaveTodo(newItem, 'add');
+          showToast(`'${chipObj.label}' 항목이 즉시 담겼습니다! 🛒`);
+        });
+
+        const delBtn = document.createElement('button');
+        delBtn.type = 'button';
+        delBtn.className = 'px-1.5 py-1 text-slate-300 hover:text-rose-600 hover:bg-rose-50 border-l border-slate-200/70 transition';
+        delBtn.innerHTML = '&times;';
+        delBtn.title = '단골 키워드 삭제';
+        delBtn.addEventListener('click', async (e) => {
+          e.stopPropagation();
+          if (realIdx !== -1) {
+            todoChips.splice(realIdx, 1);
+            try { localStorage.setItem(TODO_CHIPS_STORAGE_KEY, JSON.stringify(todoChips)); } catch (err) {}
+            renderTodoQuickChips();
+            await syncMetaToCloud();
+          }
+        });
+
+        wrap.appendChild(btn);
+        wrap.appendChild(delBtn);
+        container.appendChild(wrap);
+      });
+    }
+
+    function renderTodoSection() {
+      const activeListEl = $('todoActiveList');
+      const emptyEl = $('todoEmptyState');
+      const completedSec = $('todoCompletedSection');
+      const completedListEl = $('todoCompletedList');
+      const completedHeaderCount = $('todoCompletedHeaderCount');
+      const badgeTodoCount = $('badgeTodoCount');
+
+      if (!activeListEl) return;
+
+      const activeTodos = todos.filter(t => !t.completed);
+      const completedTodos = todos.filter(t => t.completed);
+
+      const shoppingActiveCount = activeTodos.filter(t => (t.kind || 'shopping') === 'shopping').length;
+      const taskActiveCount = activeTodos.filter(t => t.kind === 'task').length;
+      const urgentActiveCount = activeTodos.filter(t => t.isUrgent).length;
+
+      if (badgeTodoCount) badgeTodoCount.textContent = activeTodos.length;
+      if ($('summaryShoppingCount')) $('summaryShoppingCount').textContent = `${shoppingActiveCount}건`;
+      if ($('summaryTaskCount')) $('summaryTaskCount').textContent = `${taskActiveCount}건`;
+      if ($('summaryUrgentCount')) $('summaryUrgentCount').textContent = `${urgentActiveCount}건`;
+
+      const filterFn = (t) => {
+        if (currentTodoFilter === 'shopping') return (t.kind || 'shopping') === 'shopping';
+        if (currentTodoFilter === 'task') return t.kind === 'task';
+        if (currentTodoFilter === 'urgent') return Boolean(t.isUrgent);
+        if (currentTodoFilter === 'husband' || currentTodoFilter === 'wife' || currentTodoFilter === 'both') {
+          return (t.owner || 'both') === currentTodoFilter;
+        }
+        return true;
+      };
+
+      const filteredActive = activeTodos.filter(filterFn).sort((a, b) => {
+        if (Boolean(b.isUrgent) !== Boolean(a.isUrgent)) return b.isUrgent ? 1 : -1;
+        return String(b.createdAt || '').localeCompare(String(a.createdAt || ''));
+      });
+
+      const filteredCompleted = completedTodos.filter(filterFn);
+
+      renderTodoQuickChips();
+
+      if (filteredActive.length === 0) {
+        activeListEl.innerHTML = '';
+        emptyEl.classList.remove('hidden');
+      } else {
+        emptyEl.classList.add('hidden');
+        activeListEl.innerHTML = filteredActive.map(item => {
+          const isShopping = (item.kind || 'shopping') === 'shopping';
+          const ownerInfo = OWNER_CONFIG[item.owner] || OWNER_CONFIG.both;
+          const kindBadge = isShopping
+            ? `<span class="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200 shrink-0">🛒 장보기</span>`
+            : `<span class="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-indigo-50 text-indigo-700 border border-indigo-200 shrink-0">✅ 할일</span>`;
+
+          const storeBadge = (isShopping && item.store)
+            ? `<span class="text-[10px] font-semibold px-1.5 py-0.5 rounded-md bg-amber-50 text-amber-800 border border-amber-200 shrink-0">📍 ${escapeHtml(item.store)}</span>`
+            : '';
+
+          const urgentBadge = item.isUrgent
+            ? `<span class="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-rose-500 text-white animate-pulse shrink-0">🚨 급함</span>`
+            : '';
+
+          return `
+            <div class="p-3 rounded-2xl bg-white border ${item.isUrgent ? 'border-rose-300 bg-rose-50/15' : 'border-slate-200'} shadow-xs transition space-y-1.5">
+              <div class="flex items-start justify-between gap-2">
+                <div class="flex items-start gap-2.5 min-w-0 flex-1">
+                  <button type="button" data-todoid="${escapeHtml(item.id)}" class="toggle-todo-check-btn mt-0.5 w-5 h-5 rounded-lg border-2 ${isShopping ? 'border-emerald-500 hover:bg-emerald-50' : 'border-indigo-500 hover:bg-indigo-50'} flex items-center justify-center shrink-0 transition" title="완료 체크">
+                  </button>
+                  <div class="min-w-0 flex-1 space-y-1">
+                    <div class="flex items-center gap-1 flex-wrap">
+                      ${kindBadge}
+                      <span class="text-[10px] font-bold px-1.5 py-0.5 rounded-md border ${ownerInfo.cls} shrink-0">${ownerInfo.label}</span>
+                      ${storeBadge}
+                      ${urgentBadge}
+                    </div>
+                    <p class="text-xs sm:text-sm font-bold text-slate-900 leading-snug break-keep">${escapeHtml(item.title)}</p>
+                    ${item.memo ? `<p class="text-[11px] text-slate-500 leading-snug break-keep">📝 ${escapeHtml(item.memo)}</p>` : ''}
+                  </div>
+                </div>
+
+                <div class="flex items-center gap-0.5 shrink-0">
+                  <button type="button" data-todoid="${escapeHtml(item.id)}" class="send-single-todo-tg-btn text-sky-600 hover:bg-sky-50 p-1.5 rounded-lg transition" title="이 항목을 단톡방으로 즉시 부탁/알림 보내기">
+                    <i data-lucide="send" class="w-3.5 h-3.5"></i>
+                  </button>
+                  <button type="button" data-todoid="${escapeHtml(item.id)}" class="edit-todo-btn text-slate-400 hover:text-indigo-600 hover:bg-slate-100 p-1.5 rounded-lg transition" title="수정">
+                    <i data-lucide="settings-2" class="w-3.5 h-3.5"></i>
+                  </button>
+                  <button type="button" data-todoid="${escapeHtml(item.id)}" class="delete-todo-btn text-slate-400 hover:text-rose-600 hover:bg-rose-50 p-1.5 rounded-lg transition" title="삭제">
+                    <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
+
+      if (filteredCompleted.length > 0) {
+        completedSec.classList.remove('hidden');
+        if (completedHeaderCount) completedHeaderCount.textContent = `완료된 항목 (${filteredCompleted.length}건)`;
+        completedListEl.innerHTML = filteredCompleted.map(item => {
+          const isShopping = (item.kind || 'shopping') === 'shopping';
+          const storeText = (isShopping && item.store) ? ` · 📍${escapeHtml(item.store)}` : '';
+          return `
+            <div class="p-2.5 rounded-xl bg-white/80 border border-slate-200/80 flex items-center justify-between gap-2 opacity-75">
+              <div class="flex items-center gap-2 min-w-0 flex-1">
+                <button type="button" data-todoid="${escapeHtml(item.id)}" class="toggle-todo-check-btn w-5 h-5 rounded-lg bg-emerald-500 text-white flex items-center justify-center shrink-0" title="체크 해제">
+                  <i data-lucide="check" class="w-3.5 h-3.5"></i>
+                </button>
+                <div class="min-w-0 flex-1">
+                  <span class="text-xs font-semibold text-slate-500 line-through break-keep block">${escapeHtml(item.title)}</span>
+                  <span class="text-[10px] text-slate-400">${isShopping ? '🛒 장보기' : '✅ 할일'}${storeText}</span>
+                </div>
+              </div>
+              <div class="flex items-center gap-1 shrink-0">
+                <button type="button" data-todoid="${escapeHtml(item.id)}" class="toggle-todo-check-btn px-2 py-1 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 text-[10px] font-bold transition">
+                  🔄 다시 담기
+                </button>
+                <button type="button" data-todoid="${escapeHtml(item.id)}" class="delete-todo-btn text-slate-400 hover:text-rose-600 p-1" title="삭제">
+                  <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                </button>
+              </div>
+            </div>
+          `;
+        }).join('');
+      } else {
+        completedSec.classList.add('hidden');
+        completedListEl.innerHTML = '';
+      }
+
+      lucide.createIcons();
+    }
+
     function renderAll() {
       renderExpenseSection();
       renderScheduleSection();
+      renderTodoSection();
       updateNotifyUI();
     }
 
@@ -3635,21 +4283,405 @@ alter publication supabase_realtime add table fixed_expenses;</pre>
       renderScheduleSection();
     });
 
-    $('mainTabExpense').addEventListener('click', () => {
-      activeMainTab = 'expense';
-      $('mainTabExpense').className = 'py-2.5 px-2 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition bg-white text-indigo-700 shadow-sm';
-      $('mainTabSchedule').className = 'py-2.5 px-2 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition text-slate-600 hover:text-slate-900';
-      $('expenseViewSection').classList.remove('hidden');
-      $('scheduleViewSection').classList.add('hidden');
+    function switchMainTab(tabName) {
+      activeMainTab = tabName;
+      const inactiveCls = 'py-2.5 px-1.5 rounded-xl font-bold text-[11px] sm:text-xs flex items-center justify-center gap-1 transition text-slate-600 hover:text-slate-900';
+      $('mainTabExpense').className = tabName === 'expense'
+        ? 'py-2.5 px-1.5 rounded-xl font-bold text-[11px] sm:text-xs flex items-center justify-center gap-1 transition bg-white text-indigo-700 shadow-sm'
+        : inactiveCls;
+      $('mainTabSchedule').className = tabName === 'schedule'
+        ? 'py-2.5 px-1.5 rounded-xl font-bold text-[11px] sm:text-xs flex items-center justify-center gap-1 transition bg-white text-rose-600 shadow-sm'
+        : inactiveCls;
+      $('mainTabTodo').className = tabName === 'todo'
+        ? 'py-2.5 px-1.5 rounded-xl font-bold text-[11px] sm:text-xs flex items-center justify-center gap-1 transition bg-white text-emerald-700 shadow-sm'
+        : inactiveCls;
+
+      $('expenseViewSection').classList.toggle('hidden', tabName !== 'expense');
+      $('scheduleViewSection').classList.toggle('hidden', tabName !== 'schedule');
+      $('todoViewSection').classList.toggle('hidden', tabName !== 'todo');
+
+      if (tabName === 'expense') renderExpenseSection();
+      if (tabName === 'schedule') renderScheduleSection();
+      if (tabName === 'todo') renderTodoSection();
+    }
+
+    $('mainTabExpense').addEventListener('click', () => switchMainTab('expense'));
+    $('mainTabSchedule').addEventListener('click', () => switchMainTab('schedule'));
+    $('mainTabTodo').addEventListener('click', () => switchMainTab('todo'));
+
+    function setTodoKindUI(kind) {
+      currentTodoKind = kind;
+      $('todoKindInput').value = kind;
+      if (kind === 'shopping') {
+        $('btnTodoKindShopping').className = 'py-2 rounded-lg font-bold text-xs flex items-center justify-center gap-1.5 bg-white text-emerald-700 shadow-xs transition';
+        $('btnTodoKindTask').className = 'py-2 rounded-lg font-semibold text-xs flex items-center justify-center gap-1.5 text-slate-600 hover:text-slate-900 transition';
+        $('todoStoreSelectWrap').classList.remove('hidden');
+        $('todoTitleInput').placeholder = '살 품목 입력 (예: 우유 2개, 양파, 물티슈)';
+        $('submitTodoBtn').className = 'px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-xs transition shrink-0 flex items-center gap-1';
+      } else {
+        $('btnTodoKindTask').className = 'py-2 rounded-lg font-bold text-xs flex items-center justify-center gap-1.5 bg-white text-indigo-700 shadow-xs transition';
+        $('btnTodoKindShopping').className = 'py-2 rounded-lg font-semibold text-xs flex items-center justify-center gap-1.5 text-slate-600 hover:text-slate-900 transition';
+        $('todoStoreSelectWrap').classList.add('hidden');
+        $('todoTitleInput').placeholder = '부부 할 일 입력 (예: 분리수거, 세탁소 찾기)';
+        $('submitTodoBtn').className = 'px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-xs transition shrink-0 flex items-center gap-1';
+      }
+      renderTodoQuickChips();
+    }
+
+    function setTodoOwnerUI(ownerVal) {
+      currentTodoOwner = ownerVal;
+      $('todoOwnerInput').value = ownerVal;
+      document.querySelectorAll('.towner-btn').forEach(b => {
+        if (b.dataset.towner === ownerVal) {
+          const activeColor = ownerVal === 'husband' ? 'bg-blue-600 text-white' : ownerVal === 'wife' ? 'bg-rose-500 text-white' : 'bg-purple-600 text-white';
+          b.className = `towner-btn px-2.5 py-1 rounded-lg text-[11px] font-bold shadow-xs transition ${activeColor}`;
+        } else {
+          b.className = 'towner-btn px-2.5 py-1 rounded-lg text-[11px] font-medium text-slate-600 hover:text-slate-900 transition';
+        }
+      });
+    }
+
+    function setTodoUrgentUI(urgentVal) {
+      currentTodoUrgent = Boolean(urgentVal);
+      $('btnToggleTodoUrgent').className = currentTodoUrgent
+        ? 'px-2.5 py-1 rounded-xl border text-[11px] font-bold bg-rose-500 border-rose-500 text-white shadow-xs transition flex items-center gap-1'
+        : 'px-2.5 py-1 rounded-xl border text-[11px] font-semibold bg-white border-slate-200 text-slate-500 transition flex items-center gap-1';
+    }
+
+    function setTodoStorePresetUI(storeVal) {
+      currentTodoStorePreset = storeVal;
+      document.querySelectorAll('.store-chip-btn').forEach(b => {
+        if (b.dataset.store === storeVal) {
+          b.className = 'store-chip-btn px-2 py-1 rounded-lg border text-[11px] font-bold bg-emerald-600 border-emerald-600 text-white transition';
+        } else {
+          b.className = 'store-chip-btn px-2 py-1 rounded-lg border text-[11px] font-medium bg-white border-slate-200 text-slate-600 hover:bg-slate-50 transition';
+        }
+      });
+      const customVal = ($('todoCustomStoreInput')?.value || '').trim();
+      const disp = customVal || storeVal || '미지정 (자유)';
+      if ($('selectedStorePreview')) $('selectedStorePreview').textContent = disp;
+    }
+
+    $('btnTodoKindShopping').addEventListener('click', () => setTodoKindUI('shopping'));
+    $('btnTodoKindTask').addEventListener('click', () => setTodoKindUI('task'));
+
+    document.querySelectorAll('.towner-btn').forEach(btn => {
+      btn.addEventListener('click', () => setTodoOwnerUI(btn.dataset.towner));
     });
 
-    $('mainTabSchedule').addEventListener('click', () => {
-      activeMainTab = 'schedule';
-      $('mainTabSchedule').className = 'py-2.5 px-2 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition bg-white text-rose-600 shadow-sm';
-      $('mainTabExpense').className = 'py-2.5 px-2 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition text-slate-600 hover:text-slate-900';
-      $('scheduleViewSection').classList.remove('hidden');
-      $('expenseViewSection').classList.add('hidden');
-      renderScheduleSection();
+    $('btnToggleTodoUrgent').addEventListener('click', () => setTodoUrgentUI(!currentTodoUrgent));
+
+    document.querySelectorAll('.store-chip-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        $('todoCustomStoreInput').value = '';
+        setTodoStorePresetUI(btn.dataset.store);
+      });
+    });
+
+    $('todoCustomStoreInput').addEventListener('input', () => {
+      const customVal = $('todoCustomStoreInput').value.trim();
+      if ($('selectedStorePreview')) {
+        $('selectedStorePreview').textContent = customVal || currentTodoStorePreset || '미지정 (자유)';
+      }
+    });
+
+    function resetTodoForm() {
+      $('todoEditId').value = '';
+      $('todoTitleInput').value = '';
+      $('todoMemoInput').value = '';
+      $('todoCustomStoreInput').value = '';
+      setTodoUrgentUI(false);
+      setTodoStorePresetUI('');
+      $('cancelTodoEditBtn').classList.add('hidden');
+      $('submitTodoBtnText').textContent = '담기';
+    }
+
+    $('cancelTodoEditBtn').addEventListener('click', resetTodoForm);
+
+    $('todoQuickForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const title = $('todoTitleInput').value.trim();
+      if (!title) return;
+
+      const editId = $('todoEditId').value;
+      const customStore = $('todoCustomStoreInput').value.trim();
+      const finalStore = currentTodoKind === 'shopping' ? (customStore || currentTodoStorePreset) : '';
+      const memo = $('todoMemoInput').value.trim();
+
+      if (editId) {
+        const existing = todos.find(t => String(t.id) === String(editId));
+        if (existing) {
+          const updated = {
+            ...existing,
+            kind: currentTodoKind,
+            title,
+            owner: currentTodoOwner,
+            store: finalStore,
+            memo,
+            isUrgent: currentTodoUrgent
+          };
+          resetTodoForm();
+          await syncSaveTodo(updated, 'edit');
+          showToast('항목이 수정되었습니다! ✏️');
+          return;
+        }
+      }
+
+      const newTodo = {
+        id: Date.now().toString() + Math.random().toString(36).substr(2, 4),
+        kind: currentTodoKind,
+        title,
+        owner: currentTodoOwner,
+        store: finalStore,
+        memo,
+        isUrgent: currentTodoUrgent,
+        completed: false,
+        completedAt: null,
+        createdAt: new Date().toISOString()
+      };
+
+      resetTodoForm();
+      await syncSaveTodo(newTodo, 'add');
+      showToast(currentTodoKind === 'shopping' ? '장보기 목록에 담겼습니다! 🛒' : '부부 할일(TODO)이 등록되었습니다! ✅');
+    });
+
+    $('addNewTodoChipBtn').addEventListener('click', async () => {
+      const input = $('newTodoChipInput');
+      const val = input.value.trim();
+      if (!val) return;
+      if (todoChips.some(c => c.label === val && c.kind === currentTodoKind)) {
+        showToast('이미 등록된 키워드입니다.');
+        return;
+      }
+      todoChips.push({ label: val, kind: currentTodoKind });
+      try { localStorage.setItem(TODO_CHIPS_STORAGE_KEY, JSON.stringify(todoChips)); } catch (err) {}
+      input.value = '';
+      renderTodoQuickChips();
+      await syncMetaToCloud();
+      showToast(`'${val}' 단골 키워드가 저장 및 공유되었습니다!`);
+    });
+
+    $('newTodoChipInput').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        $('addNewTodoChipBtn').click();
+      }
+    });
+
+    document.querySelectorAll('.todo-filter-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.todo-filter-btn').forEach(b => {
+          b.className = 'todo-filter-btn px-2.5 py-1.5 rounded-lg text-[11px] font-medium bg-slate-100 text-slate-600 shrink-0 transition';
+        });
+        btn.className = 'todo-filter-btn px-2.5 py-1.5 rounded-lg text-[11px] font-bold bg-slate-800 text-white shrink-0 transition';
+        currentTodoFilter = btn.dataset.tfilter;
+        renderTodoSection();
+      });
+    });
+
+    $('clearCompletedTodosBtn').addEventListener('click', async () => {
+      await syncClearCompletedTodos();
+      showToast('완료된 항목이 깔끔하게 정리되었습니다! 🧹');
+    });
+
+    $('todoViewSection').addEventListener('click', async (e) => {
+      const checkBtn = e.target.closest('.toggle-todo-check-btn');
+      if (checkBtn) {
+        const id = checkBtn.dataset.todoid;
+        const target = todos.find(t => String(t.id) === String(id));
+        if (!target) return;
+        const nextCompleted = !target.completed;
+        await syncSaveTodo({
+          ...target,
+          completed: nextCompleted,
+          completedAt: nextCompleted ? new Date().toISOString() : null
+        }, nextCompleted ? 'complete' : 'reopen');
+        showToast(nextCompleted ? `'${target.title}' 완료 체크! ✓` : `'${target.title}' 항목을 다시 목록에 담았습니다.`);
+        return;
+      }
+
+      const singleSendBtn = e.target.closest('.send-single-todo-tg-btn');
+      if (singleSendBtn) {
+        if (!telegramConfig.token || !telegramConfig.chatId) {
+          showToast('먼저 상단 [알림] 버튼을 눌러 텔레그램 설정을 완료해 주세요.');
+          openNotifyModal();
+          return;
+        }
+        const id = singleSendBtn.dataset.todoid;
+        const target = todos.find(t => String(t.id) === String(id));
+        if (!target) return;
+
+        const ownerLabels = { husband: '남편 🔵', wife: '아내 🔴', both: '우리 함께 🟣' };
+        const isShopping = (target.kind || 'shopping') === 'shopping';
+        const header = isShopping
+          ? `🛒 <b>[부부 장보기 부탁 알림]</b>`
+          : `✅ <b>[부부 할일(TODO) 리마인드]</b>`;
+        const storeLine = (isShopping && target.store)
+          ? `
+• 구매처: <b>${escapeHtml(target.store)}</b>`
+          : '';
+        const urgentLine = target.isUrgent ? ` 🚨<b>[오늘 급함!]</b>` : '';
+        const memoLine = target.memo ? `
+• 메모: ${escapeHtml(target.memo)}` : '';
+
+        const msg = `${header}${urgentLine}
+• 담당: ${ownerLabels[target.owner] || '함께 🟣'}${storeLine}
+• 항목: <b>${escapeHtml(target.title)}</b>${memoLine}`;
+
+        showToast(`'${target.title}' 알림 전송 중...`);
+        const res = await sendTelegramMessage(msg);
+        if (res.success) {
+          showToast(`📢 '${target.title}' 알림이 부부 단톡방으로 전송되었습니다!`);
+        } else {
+          showToast(`전송 실패: ${res.message}`);
+        }
+        return;
+      }
+
+      const editBtn = e.target.closest('.edit-todo-btn');
+      if (editBtn) {
+        const id = editBtn.dataset.todoid;
+        const target = todos.find(t => String(t.id) === String(id));
+        if (!target) return;
+        $('todoEditId').value = target.id;
+        setTodoKindUI(target.kind || 'shopping');
+        setTodoOwnerUI(target.owner || 'both');
+        setTodoUrgentUI(Boolean(target.isUrgent));
+        $('todoTitleInput').value = target.title || '';
+        $('todoMemoInput').value = target.memo || '';
+
+        const presetStores = ['', '마트·식재료', '쿠팡·온라인', '다이소·생필품', '약국·기타'];
+        if (presetStores.includes(target.store || '')) {
+          $('todoCustomStoreInput').value = '';
+          setTodoStorePresetUI(target.store || '');
+        } else {
+          setTodoStorePresetUI('');
+          $('todoCustomStoreInput').value = target.store || '';
+          if ($('selectedStorePreview')) $('selectedStorePreview').textContent = target.store;
+        }
+
+        $('cancelTodoEditBtn').classList.remove('hidden');
+        $('submitTodoBtnText').textContent = '수정';
+        $('todoTitleInput').focus();
+        return;
+      }
+
+      const delBtn = e.target.closest('.delete-todo-btn');
+      if (delBtn) {
+        const id = delBtn.dataset.todoid;
+        const target = todos.find(t => String(t.id) === String(id));
+        if (pendingTodoDeleteId !== id) {
+          pendingTodoDeleteId = id;
+          delBtn.classList.add('text-rose-600', 'bg-rose-50', 'rounded');
+          showToast(`'${target ? target.title : '항목'}' 삭제: 쓰레기통을 한 번 더 누르면 삭제됩니다.`);
+          if (pendingTodoDeleteTimer) clearTimeout(pendingTodoDeleteTimer);
+          pendingTodoDeleteTimer = setTimeout(() => {
+            pendingTodoDeleteId = null;
+            renderTodoSection();
+          }, 3000);
+          return;
+        }
+        pendingTodoDeleteId = null;
+        if (pendingTodoDeleteTimer) clearTimeout(pendingTodoDeleteTimer);
+        await syncDeleteTodo(id);
+        showToast('항목이 삭제되었습니다.');
+      }
+    });
+
+    // 🛒 장보기 목록 전체 텔레그램 전송 (구매처가 있으면 구매처별 그룹핑, 없으면 자유 품목으로 깔끔히 표시)
+    $('sendShoppingListTgBtn').addEventListener('click', async () => {
+      if (!telegramConfig.token || !telegramConfig.chatId) {
+        showToast('먼저 상단 [알림] 버튼을 눌러 텔레그램 설정을 완료해 주세요.');
+        openNotifyModal();
+        return;
+      }
+
+      const shoppingItems = todos.filter(t => !t.completed && (t.kind || 'shopping') === 'shopping');
+      if (shoppingItems.length === 0) {
+        showToast('⚠️ 현재 남은 장보기 품목이 없습니다.');
+        return;
+      }
+
+      const ownerLabels = { husband: '남편🔵', wife: '아내🔴', both: '함께🟣' };
+      const storeGroups = {};
+      shoppingItems.forEach(item => {
+        const st = (item.store || '').trim() || '구매처 자유 (미지정)';
+        if (!storeGroups[st]) storeGroups[st] = [];
+        storeGroups[st].push(item);
+      });
+
+      let msg = `🛒 <b>[부부 장보기 체크리스트] 총 ${shoppingItems.length}건</b>
+
+`;
+      Object.keys(storeGroups).forEach(st => {
+        msg += `📍 <b>${escapeHtml(st)}</b>
+`;
+        storeGroups[st].forEach(it => {
+          const urg = it.isUrgent ? '🚨[급함] ' : '';
+          const memoStr = it.memo ? ` (${escapeHtml(it.memo)})` : '';
+          msg += `  • ${urg}<b>${escapeHtml(it.title)}</b>${memoStr} - ${ownerLabels[it.owner] || '함께🟣'}
+`;
+        });
+        msg += `
+`;
+      });
+
+      showToast('부부 단톡방으로 장보기 목록을 전송 중입니다...');
+      const res = await sendTelegramMessage(msg.trim());
+      if (res.success) {
+        showToast('단톡방으로 장보기 체크리스트가 전송되었습니다! 🛒');
+      } else {
+        showToast(`전송 실패: ${res.message}`);
+      }
+    });
+
+    // ✅ 미완료 할일(TODO) 전체 텔레그램 전송
+    $('sendTodoListTgBtn').addEventListener('click', async () => {
+      if (!telegramConfig.token || !telegramConfig.chatId) {
+        showToast('먼저 상단 [알림] 버튼을 눌러 텔레그램 설정을 완료해 주세요.');
+        openNotifyModal();
+        return;
+      }
+
+      const taskItems = todos.filter(t => !t.completed && t.kind === 'task');
+      if (taskItems.length === 0) {
+        showToast('⚠️ 현재 남은 부부 할일(TODO)이 없습니다.');
+        return;
+      }
+
+      const ownerLabels = { husband: '🔵 남편 담당', wife: '🔴 아내 담당', both: '🟣 우리 함께' };
+      const ownerGroups = { both: [], husband: [], wife: [] };
+      taskItems.forEach(it => {
+        const k = ownerGroups[it.owner] ? it.owner : 'both';
+        ownerGroups[k].push(it);
+      });
+
+      let msg = `✅ <b>[부부 미완료 할일(TODO) 브리핑] 총 ${taskItems.length}건</b>
+
+`;
+      ['both', 'husband', 'wife'].forEach(ownerKey => {
+        const list = ownerGroups[ownerKey];
+        if (list.length > 0) {
+          msg += `<b>${ownerLabels[ownerKey]} (${list.length}건)</b>
+`;
+          list.forEach(it => {
+            const urg = it.isUrgent ? '🚨[급함] ' : '';
+            const memoStr = it.memo ? ` (${escapeHtml(it.memo)})` : '';
+            msg += `  • ${urg}<b>${escapeHtml(it.title)}</b>${memoStr}
+`;
+          });
+          msg += `
+`;
+        }
+      });
+
+      showToast('부부 단톡방으로 미완료 할일 목록을 전송 중입니다...');
+      const res = await sendTelegramMessage(msg.trim());
+      if (res.success) {
+        showToast('단톡방으로 부부 할일(TODO) 목록이 전송되었습니다! ✅');
+      } else {
+        showToast(`전송 실패: ${res.message}`);
+      }
     });
 
     $('btnWeeks2').addEventListener('click', () => {
@@ -3731,6 +4763,22 @@ alter publication supabase_realtime add table fixed_expenses;</pre>
         });
       }
 
+      const activeTodos = todos.filter(t => !t.completed);
+      if (activeTodos.length > 0) {
+        const shopCnt = activeTodos.filter(t => (t.kind || 'shopping') === 'shopping').length;
+        const taskCnt = activeTodos.filter(t => t.kind === 'task').length;
+        msg += `
+🛒 <b>남은 장보기(${shopCnt}건) & 할일(${taskCnt}건):</b>
+`;
+        activeTodos.slice(0, 8).forEach(t => {
+          const icon = (t.kind || 'shopping') === 'shopping' ? '🛒' : '✅';
+          const urg = t.isUrgent ? '🚨' : '';
+          const st = (t.kind === 'shopping' && t.store) ? ` [${escapeHtml(t.store)}]` : '';
+          msg += `• ${icon}${urg} ${escapeHtml(t.title)}${st}
+`;
+        });
+      }
+
       showToast('부부 단톡방으로 브리핑을 전송 중입니다...');
       const res = await sendTelegramMessage(msg);
       if (res.success) {
@@ -3750,6 +4798,7 @@ alter publication supabase_realtime add table fixed_expenses;</pre>
       $('cfgTgNotifyAccountD1').checked = telegramConfig.notifyAccountD1 !== false;
       $('cfgTgNotifyScheduleD1').checked = telegramConfig.notifyScheduleD1 !== false;
       $('cfgTgNotifySchedule').checked = telegramConfig.notifySchedule !== false;
+      $('cfgTgNotifyTodo').checked = telegramConfig.notifyTodo !== false;
       $('cfgTgNotifyExpense').checked = Boolean(telegramConfig.notifyExpense);
       notifyModal.classList.remove('hidden');
       document.body.classList.add('overflow-hidden');
@@ -3798,6 +4847,7 @@ alter publication supabase_realtime add table fixed_expenses;</pre>
       telegramConfig.notifyAccountD1 = $('cfgTgNotifyAccountD1').checked;
       telegramConfig.notifyScheduleD1 = $('cfgTgNotifyScheduleD1').checked;
       telegramConfig.notifySchedule = $('cfgTgNotifySchedule').checked;
+      telegramConfig.notifyTodo = $('cfgTgNotifyTodo').checked;
       telegramConfig.notifyExpense = $('cfgTgNotifyExpense').checked;
       telegramConfig.updatedAt = Date.now();
 
@@ -4550,10 +5600,12 @@ alter publication supabase_realtime add table fixed_expenses;</pre>
       const backupData = {
         expenses,
         schedules,
+        todos,
         quickTags,
+        todoChips,
         telegramConfig,
         exportedAt: new Date().toISOString(),
-        version: 'v4.6'
+        version: 'v4.7'
       };
       const blob = new Blob([JSON.stringify(backupData, null, 2)], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
@@ -4608,6 +5660,19 @@ alter publication supabase_realtime add table fixed_expenses;</pre>
                 await upsertSchedulesToCloudWithFallback(schedules);
                 unlockMutationAfter(1200);
               }
+            }
+            if (Array.isArray(imported.todos)) {
+              todos = imported.todos;
+              try { localStorage.setItem(TODOS_STORAGE_KEY, JSON.stringify(todos)); } catch (err) {}
+              if (supabaseClient && todos.length > 0) {
+                lockMutation();
+                await upsertTodosToCloudWithFallback(todos);
+                unlockMutationAfter(1200);
+              }
+            }
+            if (Array.isArray(imported.todoChips)) {
+              todoChips = imported.todoChips;
+              try { localStorage.setItem(TODO_CHIPS_STORAGE_KEY, JSON.stringify(todoChips)); } catch (err) {}
             }
             if (Array.isArray(imported.quickTags)) {
               quickTags = imported.quickTags;
